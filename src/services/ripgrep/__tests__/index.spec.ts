@@ -1,6 +1,15 @@
 // npx vitest run src/services/ripgrep/__tests__/index.spec.ts
 
-import { truncateLine } from "../index"
+import * as path from "path"
+
+import { getBinPath, truncateLine } from "../index"
+import { fileExistsAtPath } from "../../../utils/fs"
+
+vi.mock("../../../utils/fs", () => ({
+	fileExistsAtPath: vi.fn(),
+}))
+
+const mockFileExistsAtPath = vi.mocked(fileExistsAtPath)
 
 describe("Ripgrep line truncation", () => {
 	// The default MAX_LINE_LENGTH is 500 in the implementation
@@ -46,5 +55,42 @@ describe("Ripgrep line truncation", () => {
 
 		expect(truncated.length).toEqual(customLength + " [truncated...]".length)
 		expect(truncated).toContain("[truncated...]")
+	})
+})
+
+describe("getBinPath", () => {
+	const appRoot = "/vscode"
+	const binName = process.platform.startsWith("win") ? "rg.exe" : "rg"
+
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it("should prefer the legacy @vscode/ripgrep path over the universal layout", async () => {
+		const legacyPath = path.join(appRoot, "node_modules", "@vscode", "ripgrep", "bin", binName)
+		mockFileExistsAtPath.mockImplementation(async (filePath: string) => filePath === legacyPath)
+
+		await expect(getBinPath(appRoot)).resolves.toBe(legacyPath)
+	})
+
+	it("should fall back to the ripgrep-universal layout used by newer VS Code builds", async () => {
+		const universalPath = path.join(
+			appRoot,
+			"node_modules.asar.unpacked",
+			"@vscode",
+			"ripgrep-universal",
+			"bin",
+			`${process.platform}-${process.arch}`,
+			binName,
+		)
+		mockFileExistsAtPath.mockImplementation(async (filePath: string) => filePath === universalPath)
+
+		await expect(getBinPath(appRoot)).resolves.toBe(universalPath)
+	})
+
+	it("should return undefined when no ripgrep binary exists", async () => {
+		mockFileExistsAtPath.mockResolvedValue(false)
+
+		await expect(getBinPath(appRoot)).resolves.toBeUndefined()
 	})
 })
