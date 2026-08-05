@@ -88,11 +88,17 @@ export async function getBinPath(vscodeAppRoot: string): Promise<string | undefi
 		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined
 	}
 
+	// Newer VS Code builds ship ripgrep as @vscode/ripgrep-universal with a
+	// platform-specific layout (e.g. bin/win32-x64/rg.exe).
+	const universalBinDir = `bin/${process.platform}-${process.arch}`
+
 	return (
 		(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
 		(await checkPath("node_modules/vscode-ripgrep/bin")) ||
 		(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
-		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/"))
+		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/")) ||
+		(await checkPath(`node_modules.asar.unpacked/@vscode/ripgrep-universal/${universalBinDir}/`)) ||
+		(await checkPath(`node_modules/@vscode/ripgrep-universal/${universalBinDir}/`))
 	)
 }
 
