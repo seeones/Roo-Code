@@ -30,6 +30,7 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Falha ao conectar com o banco de dados vetorial Qdrant. Certifique-se de que o Qdrant esteja rodando e acessível em {{qdrantUrl}}. Erro: {{errorMessage}}",
+		"qdrantUpsertFailed": "Falha ao gravar vetores de embedding no banco de dados vetorial Qdrant",
 		"vectorDimensionMismatch": "Falha ao atualizar o índice de vetores para o novo modelo. Tente limpar o índice e começar novamente. Detalhes: {{errorMessage}}"
 	},
 	"validation": {
