@@ -228,6 +228,16 @@
 		"embeddingConcurrencyLabel": "Embedding Request Concurrency",
 		"embeddingConcurrencyDescription": "Number of concurrent embedding requests during indexing. Lower values reduce API rate limit issues but slow down indexing. Higher values speed up indexing but may trigger rate limits.",
 		"pendingBatches": "{{count}} batch{{count > 1 ? 'es' : ''}} in queue",
+		"batchSummary": "{{active}} active / {{queued}} queued / {{total}} total batches",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "blocks",
+		"retryCount": "retry {{count}}",
+		"batchStage": {
+			"idle": "Idle",
+			"embedding": "Requesting Embedding API",
+			"rate_limited": "Rate limited",
+			"upserting": "Writing to vector store"
+		},
 		"rateLimited": "API rate limited (retry {{retryCount}}) — waiting before retrying",
 		"resetToDefault": "Reset to default",
 		"startIndexingButton": "Start Indexing",

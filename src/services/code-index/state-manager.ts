@@ -1,6 +1,15 @@
 import * as vscode from "vscode"
 
 export type IndexingState = "Standby" | "Indexing" | "Indexed" | "Error" | "Stopping"
+export type BatchStage = "idle" | "embedding" | "rate_limited" | "upserting"
+
+export interface BatchSlotStatus {
+	slotId: number
+	stage: BatchStage
+	blockCount: number
+	retryCount: number
+	rateLimitResetTime?: number
+}
 
 export class CodeIndexStateManager {
 	private _systemStatus: IndexingState = "Standby"
@@ -10,6 +19,10 @@ export class CodeIndexStateManager {
 	private _currentItemUnit: string = "blocks"
 	private _currentFile: string = ""
 	private _pendingBatches: number = 0
+	private _activeBatches: number = 0
+	private _queuedBatches: number = 0
+	private _batchSlots: BatchSlotStatus[] = []
+	private _batchConcurrency: number = 0
 	private _isRateLimited: boolean = false
 	private _rateLimitResetTime: number = 0
 	private _rateLimitRetryCount: number = 0
@@ -32,6 +45,10 @@ export class CodeIndexStateManager {
 			currentItemUnit: this._currentItemUnit,
 			currentFile: this._currentFile,
 			pendingBatches: this._pendingBatches,
+			activeBatches: this._activeBatches,
+			queuedBatches: this._queuedBatches,
+			batchSlots: this._batchSlots,
+			batchConcurrency: this._batchConcurrency,
 			isRateLimited: this._isRateLimited,
 			rateLimitResetTime: this._rateLimitResetTime,
 			rateLimitRetryCount: this._rateLimitRetryCount,
@@ -57,6 +74,10 @@ export class CodeIndexStateManager {
 				this._currentItemUnit = "blocks" // Reset to default unit
 				this._currentFile = ""
 				this._pendingBatches = 0
+				this._activeBatches = 0
+				this._queuedBatches = 0
+				this._batchSlots = []
+				this._batchConcurrency = 0
 				this._isRateLimited = false
 				this._rateLimitResetTime = 0
 				this._rateLimitRetryCount = 0
@@ -169,6 +190,68 @@ export class CodeIndexStateManager {
 		this._isRateLimited = false
 		this._rateLimitResetTime = 0
 		this._rateLimitRetryCount = 0
+		this._progressEmitter.fire(this.getCurrentStatus())
+	}
+
+	// --- Batch Slot Management ---
+
+	public setBatchConcurrency(concurrency: number): void {
+		this._batchConcurrency = concurrency
+		this._batchSlots = Array.from({ length: concurrency }, (_, i) => ({
+			slotId: i + 1,
+			stage: "idle" as BatchStage,
+			blockCount: 0,
+			retryCount: 0,
+		}))
+	}
+
+	public updateBatchSlot(slotId: number, updates: Partial<BatchSlotStatus>): void {
+		if (this._systemStatus === "Stopping") return
+
+		const slot = this._batchSlots.find((s) => s.slotId === slotId)
+		if (!slot) return
+
+		let changed = false
+		for (const [key, value] of Object.entries(updates)) {
+			if ((slot as any)[key] !== value) {
+				;(slot as any)[key] = value
+				changed = true
+			}
+		}
+
+		if (changed) {
+			this._recalculateBatchCounts()
+			this._systemStatus = "Indexing"
+			this._progressEmitter.fire(this.getCurrentStatus())
+		}
+	}
+
+	public resetBatchSlot(slotId: number): void {
+		if (this._systemStatus === "Stopping") return
+
+		const slot = this._batchSlots.find((s) => s.slotId === slotId)
+		if (!slot) return
+
+		slot.stage = "idle"
+		slot.blockCount = 0
+		slot.retryCount = 0
+		slot.rateLimitResetTime = undefined
+
+		this._recalculateBatchCounts()
+		this._progressEmitter.fire(this.getCurrentStatus())
+	}
+
+	private _recalculateBatchCounts(): void {
+		const activeStages: BatchStage[] = ["embedding", "rate_limited", "upserting"]
+		this._activeBatches = this._batchSlots.filter((s) => activeStages.includes(s.stage)).length
+	}
+
+	public reportQueuedBatches(count: number): void {
+		if (this._systemStatus === "Stopping") return
+		if (count === this._queuedBatches) return
+
+		this._queuedBatches = count
+		this._systemStatus = "Indexing"
 		this._progressEmitter.fire(this.getCurrentStatus())
 	}
 

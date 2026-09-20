@@ -669,6 +669,16 @@ export type WebViewMessagePayload =
 	| UpdateTodoListPayload
 	| EditQueuedMessagePayload
 
+export type BatchStage = "idle" | "embedding" | "rate_limited" | "upserting"
+
+export interface BatchSlotStatus {
+	slotId: number
+	stage: BatchStage
+	blockCount: number
+	retryCount: number
+	rateLimitResetTime?: number
+}
+
 export interface IndexingStatus {
 	systemStatus: string
 	message?: string
@@ -680,6 +690,10 @@ export interface IndexingStatus {
 	autoEnableDefault?: boolean
 	currentFile?: string
 	pendingBatches?: number
+	activeBatches?: number
+	queuedBatches?: number
+	batchSlots?: BatchSlotStatus[]
+	batchConcurrency?: number
 	isRateLimited?: boolean
 	rateLimitResetTime?: number
 	rateLimitRetryCount?: number

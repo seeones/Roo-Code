@@ -78,6 +78,9 @@ export class DirectoryScanner implements IDirectoryScanner {
 		onCurrentFile?: (filePath: string) => void,
 		onPendingBatchesChange?: (pendingCount: number) => void,
 		onRateLimit?: (resetTime: number, retryCount: number) => void,
+		onBatchSlotUpdate?: (slotId: number, updates: any) => void,
+		onBatchSlotReset?: (slotId: number) => void,
+		onQueuedBatchesChange?: (queuedCount: number) => void,
 	): Promise<{ stats: { processed: number; skipped: number }; totalBlockCount: number }> {
 		const directoryPath = directory
 		// Capture workspace context at scan start
@@ -127,6 +130,8 @@ export class DirectoryScanner implements IDirectoryScanner {
 		let currentBatchFileInfos: { filePath: string; fileHash: string; isNew: boolean }[] = []
 		const activeBatchPromises = new Set<Promise<void>>()
 		let pendingBatchCount = 0
+		let nextSlotId = 0
+		const queuedBatchCount = () => Math.max(0, pendingBatchCount - this.batchProcessingConcurrency)
 
 		// Initialize block counter
 		let totalBlockCount = 0
@@ -209,10 +214,21 @@ export class DirectoryScanner implements IDirectoryScanner {
 										// Increment pending batch count
 										pendingBatchCount++
 										onPendingBatchesChange?.(pendingBatchCount)
+										onQueuedBatchesChange?.(queuedBatchCount())
+
+										// Assign a slot ID for this batch
+										const slotId = (nextSlotId % this.batchProcessingConcurrency) + 1
+										nextSlotId++
 
 										// Queue batch processing
-										const batchPromise = batchLimiter(() =>
-											this.processBatch(
+										const batchPromise = batchLimiter(() => {
+											onBatchSlotUpdate?.(slotId, {
+												stage: "embedding",
+												blockCount: batchBlocks.length,
+												retryCount: 1,
+											})
+											onQueuedBatchesChange?.(queuedBatchCount())
+											return this.processBatch(
 												batchBlocks,
 												batchTexts,
 												batchFileInfos,
@@ -220,8 +236,10 @@ export class DirectoryScanner implements IDirectoryScanner {
 												onError,
 												onBlocksIndexed,
 												onRateLimit,
-											),
-										)
+												slotId,
+												onBatchSlotUpdate,
+											)
+										})
 										activeBatchPromises.add(batchPromise)
 
 										// Clean up completed promises to prevent memory accumulation
@@ -229,6 +247,8 @@ export class DirectoryScanner implements IDirectoryScanner {
 											activeBatchPromises.delete(batchPromise)
 											pendingBatchCount--
 											onPendingBatchesChange?.(pendingBatchCount)
+											onQueuedBatchesChange?.(queuedBatchCount())
+											onBatchSlotReset?.(slotId)
 										})
 									}
 								} finally {
@@ -304,11 +324,32 @@ export class DirectoryScanner implements IDirectoryScanner {
 				// Increment pending batch count for final batch
 				pendingBatchCount++
 				onPendingBatchesChange?.(pendingBatchCount)
+				onQueuedBatchesChange?.(queuedBatchCount())
+
+				// Assign a slot ID for this batch
+				const slotId = (nextSlotId % this.batchProcessingConcurrency) + 1
+				nextSlotId++
 
 				// Queue final batch processing
-				const batchPromise = batchLimiter(() =>
-					this.processBatch(batchBlocks, batchTexts, batchFileInfos, scanWorkspace, onError, onBlocksIndexed, onRateLimit),
-				)
+				const batchPromise = batchLimiter(() => {
+					onBatchSlotUpdate?.(slotId, {
+						stage: "embedding",
+						blockCount: batchBlocks.length,
+						retryCount: 1,
+					})
+					onQueuedBatchesChange?.(queuedBatchCount())
+					return this.processBatch(
+						batchBlocks,
+						batchTexts,
+						batchFileInfos,
+						scanWorkspace,
+						onError,
+						onBlocksIndexed,
+						onRateLimit,
+						slotId,
+						onBatchSlotUpdate,
+					)
+				})
 				activeBatchPromises.add(batchPromise)
 
 				// Clean up completed promises to prevent memory accumulation
@@ -316,6 +357,8 @@ export class DirectoryScanner implements IDirectoryScanner {
 					activeBatchPromises.delete(batchPromise)
 					pendingBatchCount--
 					onPendingBatchesChange?.(pendingBatchCount)
+					onQueuedBatchesChange?.(queuedBatchCount())
+					onBatchSlotReset?.(slotId)
 				})
 			} finally {
 				release()
@@ -390,6 +433,8 @@ export class DirectoryScanner implements IDirectoryScanner {
 		onError?: (error: Error) => void,
 		onBlocksIndexed?: (indexedCount: number) => void,
 		onRateLimit?: (resetTime: number, retryCount: number) => void,
+		slotId?: number,
+		onBatchSlotUpdate?: (slotId: number, updates: any) => void,
 	): Promise<void> {
 		if (batchBlocks.length === 0) return
 
@@ -429,6 +474,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				// --- End Deletion Step ---
 
 				// Create embeddings for batch
+				onBatchSlotUpdate?.(slotId!, { stage: "embedding", retryCount: attempts })
 				const { embeddings } = await this.embedder.createEmbeddings(batchTexts)
 
 				// Prepare points for Qdrant
@@ -452,6 +498,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				})
 
 				// Upsert points to Qdrant
+				onBatchSlotUpdate?.(slotId!, { stage: "upserting" })
 				await this.qdrantClient.upsertPoints(points)
 				onBlocksIndexed?.(batchBlocks.length)
 
@@ -478,6 +525,11 @@ export class DirectoryScanner implements IDirectoryScanner {
 					const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts - 1), maxDelay)
 					const resetTime = Date.now() + exponentialDelay
 					onRateLimit?.(resetTime, attempts)
+					onBatchSlotUpdate?.(slotId!, {
+						stage: "rate_limited",
+						retryCount: attempts,
+						rateLimitResetTime: resetTime,
+					})
 				}
 
 				if (attempts < MAX_BATCH_RETRIES) {
