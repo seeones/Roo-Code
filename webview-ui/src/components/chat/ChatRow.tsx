@@ -57,7 +57,6 @@ import {
 	Eye,
 	FileDiff,
 	ListTree,
-	User,
 	Edit,
 	Trash2,
 	MessageCircleQuestionMark,
@@ -66,7 +65,6 @@ import {
 	PocketKnife,
 	FolderTree,
 	TerminalSquare,
-	MessageCircle,
 	Repeat2,
 	Split,
 	ArrowRight,
@@ -1056,6 +1054,20 @@ export const ChatRowContent = ({
 					const isApiRequestInProgress =
 						apiReqCancelReason === undefined && apiRequestFailedMessage === undefined && cost === undefined
 
+					// Whether this request ended in an error/cancel state that still needs to be shown.
+					const hasApiRequestError =
+						(apiReqCancelReason !== null && apiReqCancelReason !== undefined) ||
+						apiRequestFailedMessage !== undefined ||
+						apiReqStreamingFailedMessage
+
+					// API request status line is only shown standalone when there is nothing after it,
+					// or when it ended in an error/cancel state. When later content exists (reasoning,
+					// task completion, etc.), the line is reused by that content instead of occupying
+					// its own row.
+					if (!isLast && !hasApiRequestError) {
+						return null
+					}
+
 					return (
 						<>
 							<div
@@ -1182,13 +1194,10 @@ export const ChatRowContent = ({
 				case "text":
 					return (
 						<div className="group">
-							<div style={headerStyle}>
-								<MessageCircle className="w-4 shrink-0" aria-label="Speech bubble icon" />
-								<span style={{ fontWeight: "bold" }}>{t("chat:text.rooSaid")}</span>
-								<div style={{ flexGrow: 1 }} />
-								<OpenMarkdownPreviewButton markdown={message.text} />
-							</div>
-							<div className="pl-6">
+							<div className="pl-6 relative">
+								<div className="absolute top-0 right-0 z-10">
+									<OpenMarkdownPreviewButton markdown={message.text} />
+								</div>
 								<Markdown markdown={message.text} partial={message.partial} />
 								{message.images && message.images.length > 0 && (
 									<div style={{ marginTop: "10px" }}>
@@ -1202,14 +1211,10 @@ export const ChatRowContent = ({
 					)
 				case "user_feedback":
 					return (
-						<div className="group">
-							<div style={headerStyle}>
-								<User className="w-4 shrink-0" aria-label="User icon" />
-								<span style={{ fontWeight: "bold" }}>{t("chat:feedback.youSaid")}</span>
-							</div>
+						<div className="group w-fit max-w-[70%] ml-auto">
 							<div
 								className={cn(
-									"ml-6 border rounded-sm overflow-hidden whitespace-pre-wrap",
+									"border rounded-sm overflow-hidden whitespace-pre-wrap",
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
 										: "cursor-text p-1 bg-vscode-editor-foreground/70 text-vscode-editor-background",
@@ -1278,7 +1283,7 @@ export const ChatRowContent = ({
 				case "user_feedback_diff":
 					const tool = safeJsonParse<ClineSayTool>(message.text)
 					return (
-						<div style={{ marginTop: -10, width: "100%" }}>
+						<div className="max-w-[70%] ml-auto" style={{ marginTop: -10, width: "100%" }}>
 							<CodeAccordion
 								code={tool?.diff}
 								language="diff"
