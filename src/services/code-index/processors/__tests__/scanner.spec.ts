@@ -448,5 +448,81 @@ describe("DirectoryScanner", () => {
 			// Deleted file cleanup should not have run
 			expect(mockVectorStore.deletePointsByFilePath).not.toHaveBeenCalled()
 		})
+
+		it("should skip queued batch processing when signal is aborted (stop clears pending queue)", async () => {
+			const { listFiles } = await import("../../../glob/list-files")
+			// 50 files x 2 blocks = 100 blocks -> 1 full batch (60) + 1 final batch (40)
+			vi.mocked(listFiles).mockResolvedValue([Array.from({ length: 50 }, (_, i) => `test/file${i}.js`), false])
+
+			// Use concurrency of 1 so the final batch truly queues behind the first
+			const singleConcurrencyScanner = new DirectoryScanner(
+				mockEmbedder,
+				mockVectorStore,
+				mockCodeParser,
+				mockCacheManager,
+				mockIgnoreInstance,
+				undefined,
+				1,
+			)
+
+			const controller = new AbortController()
+
+			const mockBlock = (filePath: string, hash: string): any => ({
+				file_path: filePath,
+				content: "function hello() {}",
+				start_line: 1,
+				end_line: 3,
+				identifier: "hello",
+				type: "function",
+				fileHash: hash,
+				segmentHash: `seg-${hash}`,
+			})
+
+			// First batch's embedding call hangs until we release it, so a second
+			// batch (final remainder) ends up queued in batchLimiter behind it.
+			let releaseFirstEmbedding!: () => void
+			const firstEmbeddingGate = new Promise<void>((resolve) => {
+				releaseFirstEmbedding = resolve
+			})
+			let embeddingCallCount = 0
+			;(mockEmbedder.createEmbeddings as any).mockImplementation(async () => {
+				embeddingCallCount++
+				if (embeddingCallCount === 1) {
+					// Hold the first batch in the "embedding" stage
+					await firstEmbeddingGate
+				}
+				return { embeddings: Array.from({ length: 60 }, () => [0.1, 0.2, 0.3]) }
+			})
+			;(mockCodeParser.parseFile as any).mockImplementation(async (filePath: string) => {
+				return [mockBlock(filePath, `hash-${filePath}`), mockBlock(filePath, `hash-${filePath}-2`)]
+			})
+
+			// Start the scan without awaiting so we can abort mid-flight
+			const scanPromise = singleConcurrencyScanner.scanDirectory(
+				"/test",
+				undefined,
+				undefined,
+				undefined,
+				controller.signal,
+			)
+
+			// Wait until the first batch has entered the embedding stage
+			await vi.waitFor(() => {
+				expect(embeddingCallCount).toBeGreaterThanOrEqual(1)
+			})
+
+			// Abort while the first batch is still in-flight and the final batch is queued
+			controller.abort()
+			// Release the first batch so it can complete
+			releaseFirstEmbedding()
+
+			await scanPromise
+
+			// Only the first batch entered the embedding stage; the queued final batch
+			// is skipped entirely. And because abort happened before the first batch
+			// could upsert, no points are written at all — stopping is immediate.
+			expect(embeddingCallCount).toBe(1)
+			expect(mockVectorStore.upsertPoints).toHaveBeenCalledTimes(0)
+		})
 	})
 })
