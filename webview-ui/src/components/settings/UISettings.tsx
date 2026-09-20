@@ -1,6 +1,6 @@
 import { HTMLAttributes, useMemo } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 
 import { SetCachedStateField } from "./types"
 import { SectionHeader } from "./SectionHeader"
@@ -11,12 +11,14 @@ import { ExtensionStateContextType } from "@/context/ExtensionStateContext"
 interface UISettingsProps extends HTMLAttributes<HTMLDivElement> {
 	reasoningBlockCollapsed: boolean
 	enterBehavior: "send" | "newline"
+	chatInputEffect: "marquee" | "breathing"
 	setCachedStateField: SetCachedStateField<keyof ExtensionStateContextType>
 }
 
 export const UISettings = ({
 	reasoningBlockCollapsed,
 	enterBehavior,
+	chatInputEffect,
 	setCachedStateField,
 	...props
 }: UISettingsProps) => {
@@ -35,6 +37,13 @@ export const UISettings = ({
 	const handleEnterBehaviorChange = (requireCtrlEnter: boolean) => {
 		const newBehavior = requireCtrlEnter ? "newline" : "send"
 		setCachedStateField("enterBehavior", newBehavior)
+	}
+
+	const handleChatInputEffectChange = (e: any) => {
+		const value = e?.target?.value as "marquee" | "breathing"
+		if (value) {
+			setCachedStateField("chatInputEffect", value)
+		}
 	}
 
 	return (
@@ -77,6 +86,27 @@ export const UISettings = ({
 							</VSCodeCheckbox>
 							<div className="text-vscode-descriptionForeground text-sm ml-5 mt-1">
 								{t("settings:ui.requireCtrlEnterToSend.description", { primaryMod })}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					{/* AI Working Input Box Effect Setting */}
+					<SearchableSetting
+						settingId="ui-chat-input-effect"
+						section="ui"
+						label={t("settings:ui.chatInputEffect.label")}>
+						<div className="flex flex-col gap-1">
+							<VSCodeDropdown
+								value={chatInputEffect}
+								onChange={handleChatInputEffectChange}
+								data-testid="chat-input-effect-dropdown">
+								<VSCodeOption value="marquee">{t("settings:ui.chatInputEffect.marquee")}</VSCodeOption>
+								<VSCodeOption value="breathing">
+									{t("settings:ui.chatInputEffect.breathing")}
+								</VSCodeOption>
+							</VSCodeDropdown>
+							<div className="text-vscode-descriptionForeground text-sm ml-5 mt-1">
+								{t("settings:ui.chatInputEffect.description")}
 							</div>
 						</div>
 					</SearchableSetting>
