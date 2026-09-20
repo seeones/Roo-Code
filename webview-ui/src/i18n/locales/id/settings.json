@@ -938,6 +938,12 @@
 			"label": "Ciutkan pesan Berpikir secara default",
 			"description": "Jika diaktifkan, blok berpikir akan diciutkan secara default sampai Anda berinteraksi dengannya"
 		},
+		"chatInputEffect": {
+			"label": "Efek kotak input saat AI bekerja",
+			"marquee": "Marquee (batas berputar)",
+			"breathing": "Bernapas (cahaya berdenyut)",
+			"description": "Pilih efek animasi batas pada kotak input chat saat AI bekerja"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Memerlukan {{primaryMod}}+Enter untuk mengirim pesan",
 			"description": "Ketika diaktifkan, kamu harus menekan {{primaryMod}}+Enter untuk mengirim pesan alih-alih hanya Enter"

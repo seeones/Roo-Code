@@ -938,6 +938,12 @@
 			"label": "デフォルトで思考メッセージを折りたたむ",
 			"description": "有効にすると、操作するまで思考ブロックがデフォルトで折りたたまれます"
 		},
+		"chatInputEffect": {
+			"label": "AI作業中の入力ボックスエフェクト",
+			"marquee": "マーキー（回転する枠線）",
+			"breathing": "ブリージング（脈動する光）",
+			"description": "AI作業中にチャット入力ボックスの枠線アニメーション効果を選択"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "メッセージを送信するには{{primaryMod}}+Enterが必要",
 			"description": "有効にすると、Enterだけでなく{{primaryMod}}+Enterを押してメッセージを送信する必要があります"

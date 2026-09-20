@@ -938,6 +938,12 @@
 			"label": "Colapsar mensajes de pensamiento por defecto",
 			"description": "Cuando está activado, los bloques de pensamiento se colapsarán por defecto hasta que interactúes con ellos"
 		},
+		"chatInputEffect": {
+			"label": "Efecto de la caja de entrada mientras la IA trabaja",
+			"marquee": "Cinta (borde giratorio)",
+			"breathing": "Respiración (brillo pulsante)",
+			"description": "Elige el efecto de animación del borde de la caja de entrada mientras la IA trabaja"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Requerir {{primaryMod}}+Enter para enviar mensajes",
 			"description": "Cuando está activado, debes presionar {{primaryMod}}+Enter para enviar mensajes en lugar de solo Enter"

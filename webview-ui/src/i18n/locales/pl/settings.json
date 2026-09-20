@@ -938,6 +938,12 @@
 			"label": "Domyślnie zwijaj komunikaty o myśleniu",
 			"description": "Gdy włączone, bloki myślenia będą domyślnie zwinięte, dopóki nie wejdziesz z nimi w interakcję"
 		},
+		"chatInputEffect": {
+			"label": "Efekt pola wprowadzania podczas pracy AI",
+			"marquee": "Marquee (obracająca się ramka)",
+			"breathing": "Oddychanie (pulsująca poświata)",
+			"description": "Wybierz efekt animacji ramki pola wprowadzania czatu podczas pracy AI"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Wymagaj {{primaryMod}}+Enter do wysyłania wiadomości",
 			"description": "Po włączeniu musisz nacisnąć {{primaryMod}}+Enter, aby wysłać wiadomości, zamiast tylko Enter"

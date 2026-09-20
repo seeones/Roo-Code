@@ -938,6 +938,12 @@
 			"label": "Denkberichten standaard samenvouwen",
 			"description": "Indien ingeschakeld, worden denkblokken standaard samengevouwen totdat je ermee interageert"
 		},
+		"chatInputEffect": {
+			"label": "Invoervak-effect terwijl AI werkt",
+			"marquee": "Marquee (draaiende rand)",
+			"breathing": "Ademen (pulserende gloed)",
+			"description": "Kies het randanimatie-effect op het chat-invoervak terwijl AI werkt"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Vereist {{primaryMod}}+Enter om berichten te versturen",
 			"description": "Wanneer ingeschakeld, moet je {{primaryMod}}+Enter indrukken om berichten te versturen in plaats van alleen Enter"

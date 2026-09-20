@@ -938,6 +938,12 @@
 			"label": "Recolher mensagens de pensamento por padrão",
 			"description": "Quando ativado, os blocos de pensamento serão recolhidos por padrão até que você interaja com eles"
 		},
+		"chatInputEffect": {
+			"label": "Efeito da caixa de entrada enquanto a IA trabalha",
+			"marquee": "Marquee (borda giratória)",
+			"breathing": "Respiração (brilho pulsante)",
+			"description": "Escolha o efeito de animação da borda na caixa de entrada do chat enquanto a IA trabalha"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Requer {{primaryMod}}+Enter para enviar mensagens",
 			"description": "Quando ativado, você deve pressionar {{primaryMod}}+Enter para enviar mensagens em vez de apenas Enter"

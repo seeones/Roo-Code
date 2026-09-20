@@ -938,6 +938,12 @@
 			"label": "Comprimi i messaggi di pensiero per impostazione predefinita",
 			"description": "Se abilitato, i blocchi di pensiero verranno compressi per impostazione predefinita finché non interagisci con essi"
 		},
+		"chatInputEffect": {
+			"label": "Effetto della casella di input mentre l'IA lavora",
+			"marquee": "Scorrimento (bordo rotante)",
+			"breathing": "Respirazione (bagliore pulsante)",
+			"description": "Scegli l'effetto di animazione del bordo sulla casella di input della chat mentre l'IA lavora"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Richiedi {{primaryMod}}+Invio per inviare messaggi",
 			"description": "Quando abilitato, devi premere {{primaryMod}}+Invio per inviare messaggi invece di solo Invio"
