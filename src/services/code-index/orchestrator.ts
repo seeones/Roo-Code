@@ -162,6 +162,14 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportBlockIndexingProgress(cumulativeBlocksIndexed, cumulativeBlocksFoundSoFar)
 				}
 
+				const handleCurrentFile = (filePath: string) => {
+					this.stateManager.reportCurrentFile(filePath)
+				}
+
+				const handlePendingBatchesChange = (pendingCount: number) => {
+					this.stateManager.reportPendingBatches(pendingCount)
+				}
+
 				// Run incremental scan - scanner will skip unchanged files using cache
 				const result = await this.scanner.scanDirectory(
 					this.workspacePath,
@@ -175,6 +183,8 @@ export class CodeIndexOrchestrator {
 					handleBlocksIndexed,
 					handleFileParsed,
 					signal,
+					handleCurrentFile,
+					handlePendingBatchesChange,
 				)
 
 				if (signal.aborted) {
@@ -224,6 +234,14 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportBlockIndexingProgress(cumulativeBlocksIndexed, cumulativeBlocksFoundSoFar)
 				}
 
+				const handleCurrentFile = (filePath: string) => {
+					this.stateManager.reportCurrentFile(filePath)
+				}
+
+				const handlePendingBatchesChange = (pendingCount: number) => {
+					this.stateManager.reportPendingBatches(pendingCount)
+				}
+
 				const result = await this.scanner.scanDirectory(
 					this.workspacePath,
 					(batchError: Error) => {
@@ -236,6 +254,8 @@ export class CodeIndexOrchestrator {
 					handleBlocksIndexed,
 					handleFileParsed,
 					signal,
+					handleCurrentFile,
+					handlePendingBatchesChange,
 				)
 
 				if (signal.aborted) {

@@ -8,6 +8,8 @@ export class CodeIndexStateManager {
 	private _processedItems: number = 0
 	private _totalItems: number = 0
 	private _currentItemUnit: string = "blocks"
+	private _currentFile: string = ""
+	private _pendingBatches: number = 0
 	private _progressEmitter = new vscode.EventEmitter<ReturnType<typeof this.getCurrentStatus>>()
 
 	// --- Public API ---
@@ -25,6 +27,8 @@ export class CodeIndexStateManager {
 			processedItems: this._processedItems,
 			totalItems: this._totalItems,
 			currentItemUnit: this._currentItemUnit,
+			currentFile: this._currentFile,
+			pendingBatches: this._pendingBatches,
 		}
 	}
 
@@ -45,6 +49,8 @@ export class CodeIndexStateManager {
 				this._processedItems = 0
 				this._totalItems = 0
 				this._currentItemUnit = "blocks" // Reset to default unit
+				this._currentFile = ""
+				this._pendingBatches = 0
 				// Optionally clear the message or set a default for non-indexing states
 				if (newState === "Standby" && message === undefined) this._statusMessage = "Ready."
 				if (newState === "Indexed" && message === undefined) this._statusMessage = "Index up-to-date."
@@ -111,6 +117,24 @@ export class CodeIndexStateManager {
 				this._progressEmitter.fire(this.getCurrentStatus())
 			}
 		}
+	}
+
+	public reportCurrentFile(filePath: string): void {
+		if (this._systemStatus === "Stopping") return
+		if (filePath === this._currentFile) return
+
+		this._currentFile = filePath
+		this._systemStatus = "Indexing"
+		this._progressEmitter.fire(this.getCurrentStatus())
+	}
+
+	public reportPendingBatches(count: number): void {
+		if (this._systemStatus === "Stopping") return
+		if (count === this._pendingBatches) return
+
+		this._pendingBatches = count
+		this._systemStatus = "Indexing"
+		this._progressEmitter.fire(this.getCurrentStatus())
 	}
 
 	public dispose(): void {
