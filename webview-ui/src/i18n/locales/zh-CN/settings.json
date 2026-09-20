@@ -941,6 +941,12 @@
 		"requireCtrlEnterToSend": {
 			"label": "需要 {{primaryMod}}+Enter 发送消息",
 			"description": "启用后，必须按 {{primaryMod}}+Enter 发送消息，而不仅仅是 Enter"
+		},
+		"chatInputEffect": {
+			"label": "AI工作时输入框动效",
+			"marquee": "走马灯效果（旋转光晕）",
+			"breathing": "呼吸效果（脉冲光晕）",
+			"description": "选择 AI 工作时输入框的边框动画效果"
 		}
 	},
 	"skills": {

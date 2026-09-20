@@ -154,6 +154,12 @@
 		"requireCtrlEnterToSend": {
 			"label": "Require {{primaryMod}}+Enter to send messages",
 			"description": "When enabled, you must press {{primaryMod}}+Enter to send messages instead of just Enter"
+		},
+		"chatInputEffect": {
+			"label": "AI Working Input Box Effect",
+			"marquee": "Marquee (rotating border)",
+			"breathing": "Breathing (pulsing glow)",
+			"description": "Choose the border animation effect on the chat input box while AI is working"
 		}
 	},
 	"prompts": {

@@ -1205,4 +1205,72 @@ describe("ChatTextArea", () => {
 			expect(sendButton).toHaveClass("pointer-events-auto")
 		})
 	})
+
+	describe("streaming border animation", () => {
+		it("renders marquee border overlay only when AI is streaming", () => {
+			const { container } = render(<ChatTextArea {...defaultProps} isStreaming={true} />)
+
+			const borderDiv = container.querySelector('[data-testid="streaming-border"]')
+			expect(borderDiv).toBeInTheDocument()
+			// Marquee effect renders a border-spin ring
+			expect(borderDiv!.querySelector('[class*="border-spin"]')).toBeInTheDocument()
+		})
+
+		it("does not render border overlay when AI is not streaming", () => {
+			const { container } = render(<ChatTextArea {...defaultProps} isStreaming={false} />)
+
+			const borderDiv = container.querySelector('[data-testid="streaming-border"]')
+			expect(borderDiv).not.toBeInTheDocument()
+		})
+
+		it("renders marquee border overlay while streaming even when focused", () => {
+			const { container } = render(<ChatTextArea {...defaultProps} isStreaming={true} />)
+
+			const textarea = container.querySelector("textarea")!
+			fireEvent.focus(textarea)
+
+			const borderDiv = container.querySelector('[data-testid="streaming-border"]')
+			expect(borderDiv).toBeInTheDocument()
+		})
+
+		it("renders breathing border overlay when chatInputEffect is breathing", () => {
+			;(useExtensionState as ReturnType<typeof vi.fn>).mockReturnValue({
+				filePaths: [],
+				openedTabs: [],
+				apiConfiguration: {
+					apiProvider: "anthropic",
+				},
+				taskHistory: [],
+				cwd: "/test/workspace",
+				chatInputEffect: "breathing",
+			})
+			const { container } = render(<ChatTextArea {...defaultProps} isStreaming={true} />)
+
+			const borderDiv = container.querySelector('[data-testid="streaming-border"]')
+			expect(borderDiv).toBeInTheDocument()
+			// Breathing effect renders streaming-glow + border-breathe classes
+			expect(borderDiv!.querySelector('[class*="streaming-glow"]')).toBeInTheDocument()
+			expect(borderDiv!.querySelector('[class*="border-breathe"]')).toBeInTheDocument()
+		})
+
+		it("does not render breathing border when chatInputEffect is marquee", () => {
+			;(useExtensionState as ReturnType<typeof vi.fn>).mockReturnValue({
+				filePaths: [],
+				openedTabs: [],
+				apiConfiguration: {
+					apiProvider: "anthropic",
+				},
+				taskHistory: [],
+				cwd: "/test/workspace",
+				chatInputEffect: "marquee",
+			})
+			const { container } = render(<ChatTextArea {...defaultProps} isStreaming={true} />)
+
+			const borderDiv = container.querySelector('[data-testid="streaming-border"]')
+			expect(borderDiv).toBeInTheDocument()
+			// Marquee effect should NOT have breathing classes
+			expect(borderDiv!.querySelector('[class*="streaming-glow"]')).not.toBeInTheDocument()
+			expect(borderDiv!.querySelector('[class*="border-breathe"]')).not.toBeInTheDocument()
+		})
+	})
 })
