@@ -677,6 +677,8 @@ export interface IndexingStatus {
 	workspacePath?: string
 	workspaceEnabled?: boolean
 	autoEnableDefault?: boolean
+	currentFile?: string
+	pendingBatches?: number
 }
 
 export interface IndexingStatusUpdateMessage {

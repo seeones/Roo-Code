@@ -31,6 +31,7 @@ import { Package } from "../../../shared/package"
 
 export class DirectoryScanner implements IDirectoryScanner {
 	private readonly batchSegmentThreshold: number
+	private readonly batchProcessingConcurrency: number
 
 	constructor(
 		private readonly embedder: IEmbedder,
@@ -39,6 +40,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 		private readonly cacheManager: CacheManager,
 		private readonly ignoreInstance: Ignore,
 		batchSegmentThreshold?: number,
+		batchProcessingConcurrency?: number,
 	) {
 		// Get the configurable batch size from VSCode settings, fallback to default
 		// If not provided in constructor, try to get from VSCode settings
@@ -54,6 +56,9 @@ export class DirectoryScanner implements IDirectoryScanner {
 				this.batchSegmentThreshold = BATCH_SEGMENT_THRESHOLD
 			}
 		}
+
+		// Set batch processing concurrency
+		this.batchProcessingConcurrency = batchProcessingConcurrency ?? BATCH_PROCESSING_CONCURRENCY
 	}
 
 	/**
@@ -70,6 +75,8 @@ export class DirectoryScanner implements IDirectoryScanner {
 		onBlocksIndexed?: (indexedCount: number) => void,
 		onFileParsed?: (fileBlockCount: number) => void,
 		signal?: AbortSignal,
+		onCurrentFile?: (filePath: string) => void,
+		onPendingBatchesChange?: (pendingCount: number) => void,
 	): Promise<{ stats: { processed: number; skipped: number }; totalBlockCount: number }> {
 		const directoryPath = directory
 		// Capture workspace context at scan start
@@ -110,7 +117,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 
 		// Initialize parallel processing tools
 		const parseLimiter = pLimit(PARSING_CONCURRENCY) // Concurrency for file parsing
-		const batchLimiter = pLimit(BATCH_PROCESSING_CONCURRENCY) // Concurrency for batch processing
+		const batchLimiter = pLimit(this.batchProcessingConcurrency) // Concurrency for batch processing
 		const mutex = new Mutex()
 
 		// Shared batch accumulators (protected by mutex)
@@ -130,6 +137,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				if (signal?.aborted) return
 
 				try {
+					onCurrentFile?.(filePath)
 					// Check file size
 					const stats = await stat(filePath)
 					if (stats.size > MAX_FILE_SIZE_BYTES) {
@@ -199,6 +207,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 
 										// Increment pending batch count
 										pendingBatchCount++
+										onPendingBatchesChange?.(pendingBatchCount)
 
 										// Queue batch processing
 										const batchPromise = batchLimiter(() =>
@@ -217,6 +226,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 										batchPromise.finally(() => {
 											activeBatchPromises.delete(batchPromise)
 											pendingBatchCount--
+											onPendingBatchesChange?.(pendingBatchCount)
 										})
 									}
 								} finally {
@@ -291,6 +301,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 
 				// Increment pending batch count for final batch
 				pendingBatchCount++
+				onPendingBatchesChange?.(pendingBatchCount)
 
 				// Queue final batch processing
 				const batchPromise = batchLimiter(() =>
@@ -302,6 +313,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				batchPromise.finally(() => {
 					activeBatchPromises.delete(batchPromise)
 					pendingBatchCount--
+					onPendingBatchesChange?.(pendingBatchCount)
 				})
 			} finally {
 				release()

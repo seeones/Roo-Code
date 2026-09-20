@@ -66,6 +66,7 @@ interface LocalCodeIndexSettings {
 	codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 	codebaseIndexSearchMaxResults?: number
 	codebaseIndexSearchMinScore?: number
+	codebaseIndexEmbeddingConcurrency?: number
 
 	// Bedrock-specific settings
 	codebaseIndexBedrockRegion?: string
@@ -214,6 +215,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexEmbedderModelDimension: undefined,
 		codebaseIndexSearchMaxResults: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 		codebaseIndexSearchMinScore: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+		codebaseIndexEmbeddingConcurrency: CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_CONCURRENCY,
 		codebaseIndexBedrockRegion: "",
 		codebaseIndexBedrockProfile: "",
 		codeIndexOpenAiKey: "",
@@ -253,6 +255,9 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					codebaseIndexConfig.codebaseIndexSearchMaxResults ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 				codebaseIndexSearchMinScore:
 					codebaseIndexConfig.codebaseIndexSearchMinScore ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+				codebaseIndexEmbeddingConcurrency:
+					codebaseIndexConfig.codebaseIndexEmbeddingConcurrency ??
+					CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_CONCURRENCY,
 				codebaseIndexBedrockRegion: codebaseIndexConfig.codebaseIndexBedrockRegion || "",
 				codebaseIndexBedrockProfile: codebaseIndexConfig.codebaseIndexBedrockProfile || "",
 				codeIndexOpenAiKey: "",
@@ -677,6 +682,26 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 									</ProgressPrimitive.Root>
 								</div>
 							)}
+
+							{indexingStatus.systemStatus === "Indexing" && indexingStatus.currentFile && (
+								<div
+									className="text-xs text-vscode-descriptionForeground mt-2 truncate"
+									title={indexingStatus.currentFile}>
+									<span className="codicon codicon-file-code mr-1" />
+									{indexingStatus.currentFile}
+								</div>
+							)}
+
+							{indexingStatus.systemStatus === "Indexing" &&
+								indexingStatus.pendingBatches !== undefined &&
+								indexingStatus.pendingBatches > 0 && (
+									<div className="text-xs text-vscode-descriptionForeground mt-1">
+										<span className="codicon codicon-sync mr-1" />
+										{t("settings:codeIndex.pendingBatches", {
+											count: indexingStatus.pendingBatches,
+										})}
+									</div>
+								)}
 						</div>
 
 						{/* Setup Settings Disclosure */}
@@ -1580,6 +1605,50 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													updateSetting(
 														"codebaseIndexSearchMaxResults",
 														CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
+													)
+												}>
+												<span className="codicon codicon-discard" />
+											</VSCodeButton>
+										</div>
+									</div>
+
+									{/* Embedding Concurrency Slider */}
+									<div className="space-y-2">
+										<div className="flex items-center gap-2">
+											<label className="text-sm font-medium">
+												{t("settings:codeIndex.embeddingConcurrencyLabel")}
+											</label>
+											<StandardTooltip
+												content={t("settings:codeIndex.embeddingConcurrencyDescription")}>
+												<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
+											</StandardTooltip>
+										</div>
+										<div className="flex items-center gap-2">
+											<Slider
+												min={CODEBASE_INDEX_DEFAULTS.MIN_EMBEDDING_CONCURRENCY}
+												max={CODEBASE_INDEX_DEFAULTS.MAX_EMBEDDING_CONCURRENCY}
+												step={CODEBASE_INDEX_DEFAULTS.EMBEDDING_CONCURRENCY_STEP}
+												value={[
+													currentSettings.codebaseIndexEmbeddingConcurrency ??
+														CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_CONCURRENCY,
+												]}
+												onValueChange={(values) =>
+													updateSetting("codebaseIndexEmbeddingConcurrency", values[0])
+												}
+												className="flex-1"
+												data-testid="embedding-concurrency-slider"
+											/>
+											<span className="w-12 text-center">
+												{currentSettings.codebaseIndexEmbeddingConcurrency ??
+													CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_CONCURRENCY}
+											</span>
+											<VSCodeButton
+												appearance="icon"
+												title={t("settings:codeIndex.resetToDefault")}
+												onClick={() =>
+													updateSetting(
+														"codebaseIndexEmbeddingConcurrency",
+														CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_CONCURRENCY,
 													)
 												}>
 												<span className="codicon codicon-discard" />
