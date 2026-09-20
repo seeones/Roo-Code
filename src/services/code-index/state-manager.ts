@@ -10,6 +10,9 @@ export class CodeIndexStateManager {
 	private _currentItemUnit: string = "blocks"
 	private _currentFile: string = ""
 	private _pendingBatches: number = 0
+	private _isRateLimited: boolean = false
+	private _rateLimitResetTime: number = 0
+	private _rateLimitRetryCount: number = 0
 	private _progressEmitter = new vscode.EventEmitter<ReturnType<typeof this.getCurrentStatus>>()
 
 	// --- Public API ---
@@ -29,6 +32,9 @@ export class CodeIndexStateManager {
 			currentItemUnit: this._currentItemUnit,
 			currentFile: this._currentFile,
 			pendingBatches: this._pendingBatches,
+			isRateLimited: this._isRateLimited,
+			rateLimitResetTime: this._rateLimitResetTime,
+			rateLimitRetryCount: this._rateLimitRetryCount,
 		}
 	}
 
@@ -51,6 +57,9 @@ export class CodeIndexStateManager {
 				this._currentItemUnit = "blocks" // Reset to default unit
 				this._currentFile = ""
 				this._pendingBatches = 0
+				this._isRateLimited = false
+				this._rateLimitResetTime = 0
+				this._rateLimitRetryCount = 0
 				// Optionally clear the message or set a default for non-indexing states
 				if (newState === "Standby" && message === undefined) this._statusMessage = "Ready."
 				if (newState === "Indexed" && message === undefined) this._statusMessage = "Index up-to-date."
@@ -134,6 +143,32 @@ export class CodeIndexStateManager {
 
 		this._pendingBatches = count
 		this._systemStatus = "Indexing"
+		this._progressEmitter.fire(this.getCurrentStatus())
+	}
+
+	public reportRateLimit(resetTime: number, retryCount: number): void {
+		if (this._systemStatus === "Stopping") return
+
+		const changed =
+			this._isRateLimited !== true ||
+			this._rateLimitResetTime !== resetTime ||
+			this._rateLimitRetryCount !== retryCount
+
+		if (!changed) return
+
+		this._isRateLimited = true
+		this._rateLimitResetTime = resetTime
+		this._rateLimitRetryCount = retryCount
+		this._systemStatus = "Indexing"
+		this._progressEmitter.fire(this.getCurrentStatus())
+	}
+
+	public clearRateLimit(): void {
+		if (!this._isRateLimited) return
+
+		this._isRateLimited = false
+		this._rateLimitResetTime = 0
+		this._rateLimitRetryCount = 0
 		this._progressEmitter.fire(this.getCurrentStatus())
 	}
 

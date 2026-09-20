@@ -2201,6 +2201,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 					codebaseIndexBedrockProfile: settings.codebaseIndexBedrockProfile,
 					codebaseIndexSearchMaxResults: settings.codebaseIndexSearchMaxResults,
 					codebaseIndexSearchMinScore: settings.codebaseIndexSearchMinScore,
+					codebaseIndexEmbeddingConcurrency: settings.codebaseIndexEmbeddingConcurrency,
 					codebaseIndexOpenRouterSpecificProvider: settings.codebaseIndexOpenRouterSpecificProvider,
 				}
 

@@ -228,6 +228,7 @@
 		"embeddingConcurrencyLabel": "Embedding Request Concurrency",
 		"embeddingConcurrencyDescription": "Number of concurrent embedding requests during indexing. Lower values reduce API rate limit issues but slow down indexing. Higher values speed up indexing but may trigger rate limits.",
 		"pendingBatches": "{{count}} batch{{count > 1 ? 'es' : ''}} in queue",
+		"rateLimited": "API rate limited (retry {{retryCount}}) — waiting before retrying",
 		"resetToDefault": "Reset to default",
 		"startIndexingButton": "Start Indexing",
 		"clearIndexDataButton": "Clear Index Data",

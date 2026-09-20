@@ -170,6 +170,14 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportPendingBatches(pendingCount)
 				}
 
+				const handleRateLimit = (resetTime: number, retryCount: number) => {
+					if (resetTime === 0 && retryCount === 0) {
+						this.stateManager.clearRateLimit()
+					} else {
+						this.stateManager.reportRateLimit(resetTime, retryCount)
+					}
+				}
+
 				// Run incremental scan - scanner will skip unchanged files using cache
 				const result = await this.scanner.scanDirectory(
 					this.workspacePath,
@@ -185,6 +193,7 @@ export class CodeIndexOrchestrator {
 					signal,
 					handleCurrentFile,
 					handlePendingBatchesChange,
+					handleRateLimit,
 				)
 
 				if (signal.aborted) {
@@ -242,6 +251,14 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportPendingBatches(pendingCount)
 				}
 
+				const handleRateLimit = (resetTime: number, retryCount: number) => {
+					if (resetTime === 0 && retryCount === 0) {
+						this.stateManager.clearRateLimit()
+					} else {
+						this.stateManager.reportRateLimit(resetTime, retryCount)
+					}
+				}
+
 				const result = await this.scanner.scanDirectory(
 					this.workspacePath,
 					(batchError: Error) => {
@@ -256,6 +273,7 @@ export class CodeIndexOrchestrator {
 					signal,
 					handleCurrentFile,
 					handlePendingBatchesChange,
+					handleRateLimit,
 				)
 
 				if (signal.aborted) {

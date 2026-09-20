@@ -206,6 +206,7 @@
 		"embeddingConcurrencyLabel": "嵌入请求并发数",
 		"embeddingConcurrencyDescription": "索引期间同时发送的嵌入请求数。较低的值可减少 API 限流问题，但会减慢索引速度。较高的值可加快索引速度，但可能触发速率限制。",
 		"pendingBatches": "队列中有 {{count}} 个批次待处理",
+		"rateLimited": "API 限流中（第 {{retryCount}} 次重试）— 等待后重试",
 		"resetToDefault": "恢复默认值",
 		"stopIndexingButton": "停止索引",
 		"stoppingButton": "正在停止...",
