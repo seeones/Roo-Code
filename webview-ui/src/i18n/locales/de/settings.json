@@ -938,6 +938,12 @@
 			"label": "Gedankenblöcke standardmäßig ausblenden",
 			"description": "Wenn aktiviert, werden Gedankenblöcke standardmäßig ausgeblendet, bis du mit ihnen interagierst"
 		},
+		"chatInputEffect": {
+			"label": "Effekt für das Eingabefeld, während die KI arbeitet",
+			"marquee": "Laufschrift (rotierender Rand)",
+			"breathing": "Atmung (pulsierendes Leuchten)",
+			"description": "Wähle den Rahmenanimationseffekt für das Eingabefeld, während die KI arbeitet"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "{{primaryMod}}+Enter zum Senden erfordern",
 			"description": "Wenn aktiviert, musst du {{primaryMod}}+Enter drücken, um Nachrichten zu senden, anstatt nur Enter"

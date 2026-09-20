@@ -938,6 +938,12 @@
 			"label": "Thu gọn tin nhắn Suy nghĩ theo mặc định",
 			"description": "Khi được bật, các khối suy nghĩ sẽ được thu gọn theo mặc định cho đến khi bạn tương tác với chúng"
 		},
+		"chatInputEffect": {
+			"label": "Hiệu ứng ô nhập khi AI đang làm việc",
+			"marquee": "Marquee (viền xoay)",
+			"breathing": "Thở (ánh sáng nhấp nháy)",
+			"description": "Chọn hiệu ứng hoạt hình viền trên ô nhập chat khi AI đang làm việc"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Yêu cầu {{primaryMod}}+Enter để gửi tin nhắn",
 			"description": "Khi được bật, bạn phải nhấn {{primaryMod}}+Enter để gửi tin nhắn thay vì chỉ nhấn Enter"

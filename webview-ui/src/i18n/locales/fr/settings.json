@@ -938,6 +938,12 @@
 			"label": "Réduire les messages de réflexion par défaut",
 			"description": "Si activé, les blocs de réflexion seront réduits par défaut jusqu'à ce que vous interagissiez avec eux"
 		},
+		"chatInputEffect": {
+			"label": "Effet de la zone de saisie pendant le travail de l'IA",
+			"marquee": "Défilement (bordure rotative)",
+			"breathing": "Respiration (lueur pulsante)",
+			"description": "Choisissez l'effet d'animation de la bordure de la zone de saisie pendant que l'IA travaille"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "Exiger {{primaryMod}}+Entrée pour envoyer les messages",
 			"description": "Lorsqu'activé, tu dois appuyer sur {{primaryMod}}+Entrée pour envoyer des messages au lieu de simplement Entrée"

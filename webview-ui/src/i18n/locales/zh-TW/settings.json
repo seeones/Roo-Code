@@ -99,6 +99,12 @@
 			"label": "預設折疊「思考」訊息",
 			"description": "啟用後，「思考」塊將預設折疊，直到您與其互動"
 		},
+		"chatInputEffect": {
+			"label": "AI 工作時的輸入框動效",
+			"marquee": "跑馬燈效果（旋轉光暈）",
+			"breathing": "呼吸效果（脈動光暈）",
+			"description": "選擇 AI 工作時聊天輸入框的邊框動畫效果"
+		},
 		"requireCtrlEnterToSend": {
 			"label": "需要 {{primaryMod}}+Enter 傳送訊息",
 			"description": "啟用後，必須按 {{primaryMod}}+Enter 傳送訊息，而不只是 Enter"
