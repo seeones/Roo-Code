@@ -605,6 +605,7 @@ export interface WebviewMessage {
 		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
+		codebaseIndexEmbeddingConcurrency?: number
 		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
 
 		// Secret settings
@@ -679,6 +680,9 @@ export interface IndexingStatus {
 	autoEnableDefault?: boolean
 	currentFile?: string
 	pendingBatches?: number
+	isRateLimited?: boolean
+	rateLimitResetTime?: number
+	rateLimitRetryCount?: number
 }
 
 export interface IndexingStatusUpdateMessage {

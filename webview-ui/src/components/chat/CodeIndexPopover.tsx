@@ -702,6 +702,15 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										})}
 									</div>
 								)}
+
+							{indexingStatus.isRateLimited && indexingStatus.rateLimitResetTime && (
+								<div className="text-xs text-yellow-500 mt-1 flex items-center">
+									<span className="codicon codicon-warning mr-1" />
+									{t("settings:codeIndex.rateLimited", {
+										retryCount: indexingStatus.rateLimitRetryCount || 1,
+									})}
+								</div>
+							)}
 						</div>
 
 						{/* Setup Settings Disclosure */}

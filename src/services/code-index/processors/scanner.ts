@@ -77,6 +77,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 		signal?: AbortSignal,
 		onCurrentFile?: (filePath: string) => void,
 		onPendingBatchesChange?: (pendingCount: number) => void,
+		onRateLimit?: (resetTime: number, retryCount: number) => void,
 	): Promise<{ stats: { processed: number; skipped: number }; totalBlockCount: number }> {
 		const directoryPath = directory
 		// Capture workspace context at scan start
@@ -218,6 +219,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 												scanWorkspace,
 												onError,
 												onBlocksIndexed,
+												onRateLimit,
 											),
 										)
 										activeBatchPromises.add(batchPromise)
@@ -305,7 +307,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 
 				// Queue final batch processing
 				const batchPromise = batchLimiter(() =>
-					this.processBatch(batchBlocks, batchTexts, batchFileInfos, scanWorkspace, onError, onBlocksIndexed),
+					this.processBatch(batchBlocks, batchTexts, batchFileInfos, scanWorkspace, onError, onBlocksIndexed, onRateLimit),
 				)
 				activeBatchPromises.add(batchPromise)
 
@@ -387,6 +389,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 		scanWorkspace: string,
 		onError?: (error: Error) => void,
 		onBlocksIndexed?: (indexedCount: number) => void,
+		onRateLimit?: (resetTime: number, retryCount: number) => void,
 	): Promise<void> {
 		if (batchBlocks.length === 0) return
 
@@ -457,12 +460,25 @@ export class DirectoryScanner implements IDirectoryScanner {
 					await this.cacheManager.updateHash(fileInfo.filePath, fileInfo.fileHash)
 				}
 				success = true
+				// Clear rate limit status on successful batch
+				onRateLimit?.(0, 0)
 			} catch (error) {
 				lastError = error as Error
 				console.error(
 					`[DirectoryScanner] Error processing batch (attempt ${attempts}) in workspace ${scanWorkspace}:`,
 					error,
 				)
+
+				// Detect rate limit errors (HTTP 429) and notify callback
+				const httpError = error as any
+				if (httpError?.status === 429 || (error as Error)?.message?.includes("429")) {
+					// Estimate reset time based on exponential backoff (same logic as embedder)
+					const baseDelay = 5000
+					const maxDelay = 300000
+					const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts - 1), maxDelay)
+					const resetTime = Date.now() + exponentialDelay
+					onRateLimit?.(resetTime, attempts)
+				}
 
 				if (attempts < MAX_BATCH_RETRIES) {
 					const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempts - 1)
