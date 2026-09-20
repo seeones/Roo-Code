@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useEvent } from "react-use"
 
 import {
@@ -8,6 +8,7 @@ import {
 	type ModelRecord,
 	type ExtensionMessage,
 	type LanguageModelChatSelector,
+	openAiModelInfoSaneDefaults,
 	anthropicDefaultModelId,
 	bedrockDefaultModelId,
 	deepSeekDefaultModelId,
@@ -34,11 +35,10 @@ import {
 } from "@roo-code/types"
 
 import { useRouterModels } from "@/components/ui/hooks/useRouterModels"
-import { useLmStudioModels } from "@/components/ui/hooks/useLmStudioModels"
-import { useOllamaModels } from "@/components/ui/hooks/useOllamaModels"
 import { getStaticModelsForProvider } from "@/components/settings/utils/providerModelConfig"
 import { MODELS_BY_PROVIDER } from "@/components/settings/constants"
 import { useExtensionState } from "@/context/ExtensionStateContext"
+import { vscode } from "@/utils/vscode"
 
 type ModelIdKey = keyof Pick<
 	ProviderSettings,
@@ -81,6 +81,10 @@ const ROUTER_DEFAULT_MODEL_IDS: Partial<Record<ProviderName, string>> = {
 	poe: poeDefaultModelId,
 }
 
+// Providers whose model list is delivered through a dedicated message event
+// (mirrors the settings page provider components).
+const MESSAGE_BASED_PROVIDERS: ProviderName[] = ["openai", "ollama", "lmstudio", "vscode-lm"]
+
 export interface ChatModelSelectorData {
 	/** The provider key used to determine model source (undefined for retired providers). */
 	provider: ProviderName | undefined
@@ -101,35 +105,91 @@ export interface ChatModelSelectorData {
 /**
  * Resolves the model list, storage key and defaults for the currently active
  * provider so the chat input bar can render a compact model picker.
+ *
+ * The data sources mirror the settings page (`ApiOptions` and the provider
+ * components) so the chat selector shows the exact same models:
+ * - Router providers (openrouter, requesty, unbound, vercel-ai-gateway):
+ *   react-query `useRouterModels` request.
+ * - litellm / poe: backend-broadcast `routerModels` from extension state.
+ * - openai (OpenAI compatible), ollama, lmstudio, vscode-lm: request on mount
+ *   and listen for the corresponding `*Models` message event.
+ * - Static providers: `getStaticModelsForProvider`.
  */
 export const useChatModelSelector = (): ChatModelSelectorData => {
-	const { apiConfiguration } = useExtensionState()
+	const { apiConfiguration, routerModels: stateRouterModels } = useExtensionState()
 
 	const provider = (apiConfiguration?.apiProvider || "openrouter") as ProviderName
 	const activeProvider = isRetiredProvider(provider) ? undefined : provider
 
-	// Dynamic (router-based) providers: openrouter, requesty, unbound, litellm,
-	// vercel-ai-gateway, poe.
+	// Router providers are fetched through react-query (mirrors ApiOptions).
 	const routerModels = useRouterModels({
 		provider: activeProvider,
 		enabled: !!activeProvider && ROUTER_DEFAULT_MODEL_IDS[activeProvider] !== undefined,
 	})
 
-	// Local inference providers.
-	const lmStudioModelId = activeProvider === "lmstudio" ? apiConfiguration?.lmStudioModelId : undefined
-	const ollamaModelId = activeProvider === "ollama" ? apiConfiguration?.ollamaModelId : undefined
-	const lmStudioModels = useLmStudioModels(lmStudioModelId)
-	const ollamaModels = useOllamaModels(ollamaModelId)
-
-	// VSCode LM models are delivered via a message event.
+	// Message-based providers: request the models on mount and keep the
+	// latest list delivered by the backend.
+	const [openAiModels, setOpenAiModels] = useState<string[]>([])
+	const [ollamaModels, setOllamaModels] = useState<ModelRecord>({})
+	const [lmStudioModels, setLmStudioModels] = useState<ModelRecord>({})
 	const [vsCodeLmModels, setVsCodeLmModels] = useState<LanguageModelChatSelector[]>([])
+
 	const onMessage = useCallback((event: MessageEvent) => {
 		const message: ExtensionMessage = event.data
-		if (message.type === "vsCodeLmModels") {
-			setVsCodeLmModels(message.vsCodeLmModels ?? [])
+		switch (message.type) {
+			case "openAiModels":
+				setOpenAiModels(message.openAiModels ?? [])
+				break
+			case "ollamaModels":
+				setOllamaModels(message.ollamaModels ?? {})
+				break
+			case "lmStudioModels":
+				setLmStudioModels(message.lmStudioModels ?? {})
+				break
+			case "vsCodeLmModels":
+				setVsCodeLmModels(message.vsCodeLmModels ?? [])
+				break
 		}
 	}, [])
 	useEvent("message", onMessage)
+
+	// Request models on mount when a message-based provider is active
+	// (mirrors Ollama.tsx / LMStudio.tsx / OpenAICompatible.tsx behaviors).
+	useEffect(() => {
+		if (!activeProvider || !MESSAGE_BASED_PROVIDERS.includes(activeProvider)) {
+			return
+		}
+
+		switch (activeProvider) {
+			case "openai":
+				if (apiConfiguration?.openAiBaseUrl && apiConfiguration?.openAiApiKey) {
+					vscode.postMessage({
+						type: "requestOpenAiModels",
+						values: {
+							baseUrl: apiConfiguration.openAiBaseUrl,
+							apiKey: apiConfiguration.openAiApiKey,
+							customHeaders: {},
+							openAiHeaders: apiConfiguration.openAiHeaders ?? {},
+						},
+					})
+				}
+				break
+			case "ollama":
+				vscode.postMessage({ type: "requestOllamaModels" })
+				break
+			case "lmstudio":
+				vscode.postMessage({ type: "requestLmStudioModels" })
+				break
+			case "vscode-lm":
+				vscode.postMessage({ type: "requestVsCodeLmModels" })
+				break
+		}
+	}, [
+		activeProvider,
+		apiConfiguration?.openAiBaseUrl,
+		apiConfiguration?.openAiApiKey,
+		apiConfiguration?.openAiHeaders,
+	])
 
 	// Map provider -> config field key + model list + default id.
 	const result = useMemo<ChatModelSelectorData>(() => {
@@ -168,7 +228,9 @@ export const useChatModelSelector = (): ChatModelSelectorData => {
 				modelIdKey = "unboundModelId"
 				break
 			case "litellm":
-				models = routerModels.data?.litellm ?? null
+				// The settings page reads litellm models from the backend
+				// broadcast cache (stateRouterModels), not from react-query.
+				models = stateRouterModels?.litellm ?? null
 				modelIdKey = "litellmModelId"
 				break
 			case "vercel-ai-gateway":
@@ -176,15 +238,25 @@ export const useChatModelSelector = (): ChatModelSelectorData => {
 				modelIdKey = "vercelAiGatewayModelId"
 				break
 			case "poe":
-				models = routerModels.data?.poe ?? null
+				// Same as litellm: poe uses the backend broadcast cache.
+				models = stateRouterModels?.poe ?? null
 				modelIdKey = "apiModelId"
 				break
+			case "openai":
+				// OpenAI Compatible: the list is fetched from the baseUrl via
+				// `requestOpenAiModels` and delivered through `openAiModels`.
+				models =
+					Object.keys(openAiModels).length > 0
+						? Object.fromEntries(openAiModels.map((item) => [item, openAiModelInfoSaneDefaults]))
+						: null
+				modelIdKey = "openAiModelId"
+				break
 			case "ollama":
-				models = (ollamaModels.data as ModelRecord | undefined) ?? null
+				models = Object.keys(ollamaModels).length > 0 ? ollamaModels : null
 				modelIdKey = "ollamaModelId"
 				break
 			case "lmstudio":
-				models = (lmStudioModels.data as ModelRecord | undefined) ?? null
+				models = Object.keys(lmStudioModels).length > 0 ? lmStudioModels : null
 				modelIdKey = "lmStudioModelId"
 				break
 			case "vscode-lm":
@@ -212,26 +284,18 @@ export const useChatModelSelector = (): ChatModelSelectorData => {
 					return selector.vendor && selector.family ? `${selector.vendor}/${selector.family}` : ""
 				}
 				break
-			case "openai":
-				// OpenAI Compatible: models are user-provided text, so no predefined list.
-				models = null
-				modelIdKey = "openAiModelId"
-				break
 			default:
 				// Static models providers (anthropic, bedrock, gemini, etc.).
-				if (MODELS_BY_PROVIDER[activeProvider]) {
-					models = getStaticModelsForProvider(activeProvider)
-					modelIdKey = "apiModelId"
-				} else {
-					models = null
-					modelIdKey = "apiModelId"
-				}
+				models = MODELS_BY_PROVIDER[activeProvider] ? getStaticModelsForProvider(activeProvider) : null
+				modelIdKey = "apiModelId"
 		}
 
 		isLoading =
 			(ROUTER_DEFAULT_MODEL_IDS[activeProvider] !== undefined && routerModels.isLoading) ||
-			(activeProvider === "ollama" && ollamaModels.isLoading) ||
-			(activeProvider === "lmstudio" && lmStudioModels.isLoading)
+			(activeProvider === "openai" &&
+				!!apiConfiguration?.openAiBaseUrl &&
+				!!apiConfiguration?.openAiApiKey &&
+				openAiModels.length === 0)
 
 		return {
 			provider: activeProvider,
@@ -242,7 +306,16 @@ export const useChatModelSelector = (): ChatModelSelectorData => {
 			valueTransform,
 			displayTransform,
 		}
-	}, [activeProvider, apiConfiguration, routerModels, ollamaModels, lmStudioModels, vsCodeLmModels])
+	}, [
+		activeProvider,
+		apiConfiguration,
+		routerModels,
+		stateRouterModels,
+		openAiModels,
+		ollamaModels,
+		lmStudioModels,
+		vsCodeLmModels,
+	])
 
 	return result
 }
