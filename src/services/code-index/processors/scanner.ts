@@ -238,6 +238,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 												onRateLimit,
 												slotId,
 												onBatchSlotUpdate,
+												signal,
 											)
 										})
 										activeBatchPromises.add(batchPromise)
@@ -348,6 +349,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 						onRateLimit,
 						slotId,
 						onBatchSlotUpdate,
+						signal,
 					)
 				})
 				activeBatchPromises.add(batchPromise)
@@ -435,16 +437,23 @@ export class DirectoryScanner implements IDirectoryScanner {
 		onRateLimit?: (resetTime: number, retryCount: number) => void,
 		slotId?: number,
 		onBatchSlotUpdate?: (slotId: number, updates: any) => void,
+		signal?: AbortSignal,
 	): Promise<void> {
 		if (batchBlocks.length === 0) return
+
+		// Bail out immediately if already aborted
+		if (signal?.aborted) return
 
 		let attempts = 0
 		let success = false
 		let lastError: Error | null = null
 
-		while (attempts < MAX_BATCH_RETRIES && !success) {
+		while (attempts < MAX_BATCH_RETRIES && !success && !signal?.aborted) {
 			attempts++
 			try {
+				// Check abort before each attempt
+				if (signal?.aborted) return
+
 				// --- Deletion Step ---
 				const uniqueFilePaths = [
 					...new Set(
@@ -473,6 +482,9 @@ export class DirectoryScanner implements IDirectoryScanner {
 				}
 				// --- End Deletion Step ---
 
+				// Check abort before embedding request
+				if (signal?.aborted) return
+
 				// Create embeddings for batch
 				onBatchSlotUpdate?.(slotId!, { stage: "embedding", retryCount: attempts })
 				const { embeddings } = await this.embedder.createEmbeddings(batchTexts)
@@ -496,6 +508,9 @@ export class DirectoryScanner implements IDirectoryScanner {
 						},
 					}
 				})
+
+				// Check abort before upsert
+				if (signal?.aborted) return
 
 				// Upsert points to Qdrant
 				onBatchSlotUpdate?.(slotId!, { stage: "upserting" })
@@ -532,9 +547,19 @@ export class DirectoryScanner implements IDirectoryScanner {
 					})
 				}
 
-				if (attempts < MAX_BATCH_RETRIES) {
+				if (attempts < MAX_BATCH_RETRIES && !signal?.aborted) {
 					const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempts - 1)
-					await new Promise((resolve) => setTimeout(resolve, delay))
+					await new Promise<void>((resolve) => {
+						const timer = setTimeout(resolve, delay)
+						signal?.addEventListener(
+							"abort",
+							() => {
+								clearTimeout(timer)
+								resolve()
+							},
+							{ once: true },
+						)
+					})
 				}
 			}
 		}
