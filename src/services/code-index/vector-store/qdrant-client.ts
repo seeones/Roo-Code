@@ -369,9 +369,75 @@ export class QdrantVectorStore implements IVectorStore {
 				wait: true,
 			})
 		} catch (error) {
-			console.error("Failed to upsert points:", error)
-			throw error
+			// The Qdrant JS client throws errors whose `message` is only the HTTP status text
+			// (e.g. "Bad Request"), which is useless for diagnosis. Wrap the error with the
+			// detailed server-side message while preserving structured fields (status, etc.)
+			// that downstream callers rely on (e.g. HTTP 429 rate-limit detection).
+			const wrappedError = this._toDetailedQdrantError(error, t("embeddings:vectorStore.qdrantUpsertFailed"))
+			console.error("[QdrantVectorStore] Failed to upsert points:", wrappedError)
+			throw wrappedError
 		}
+	}
+
+	/**
+	 * Extracts a detailed, human-readable error message from a Qdrant API error.
+	 *
+	 * The Qdrant JS client surfaces errors via `ApiError`, whose `message` is only the
+	 * HTTP status text (e.g. "Bad Request"). The detailed server-side message is nested
+	 * inside the response body (`error.data.status.error`). This helper surfaces that
+	 * detail so users can actually diagnose the failure.
+	 */
+	private _extractQdrantErrorDetail(error: unknown): string {
+		const apiError = error as any
+		if (apiError) {
+			// Qdrant's error response body: { "status": { "error": "Wrong input: ..." }, ... }
+			const serverError = apiError?.data?.status?.error
+			if (typeof serverError === "string" && serverError.trim().length > 0) {
+				return serverError
+			}
+
+			// Fall back to the raw response body if present
+			const data = apiError?.data
+			if (data && typeof data === "object") {
+				try {
+					const serialized = JSON.stringify(data)
+					if (serialized && serialized.length > 0 && serialized !== "{}") {
+						return serialized
+					}
+				} catch {
+					// Fall through to the error message below
+				}
+			}
+		}
+		return error instanceof Error ? error.message : String(error)
+	}
+
+	/**
+	 * Wraps a Qdrant API error with a detailed message while preserving the original
+	 * error as `cause` and copying structured fields (status, statusText, url, data)
+	 * that downstream callers may inspect.
+	 *
+	 * If no extra detail is available, the original error is returned unchanged.
+	 */
+	private _toDetailedQdrantError(error: unknown, context: string): Error {
+		if (!(error instanceof Error)) {
+			return new Error(`${context}: ${String(error)}`)
+		}
+
+		const detail = this._extractQdrantErrorDetail(error)
+		if (!detail || detail === error.message) {
+			return error
+		}
+
+		const wrapped = new Error(`${context}: ${detail}`)
+		const source = error as any
+		for (const key of ["status", "statusText", "url", "data"] as const) {
+			if (source?.[key] !== undefined) {
+				;(wrapped as any)[key] = source[key]
+			}
+		}
+		wrapped.cause = error
+		return wrapped
 	}
 
 	/**

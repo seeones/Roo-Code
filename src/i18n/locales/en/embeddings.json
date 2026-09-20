@@ -30,6 +30,7 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Failed to connect to Qdrant vector database. Please ensure Qdrant is running and accessible at {{qdrantUrl}}. Error: {{errorMessage}}",
+		"qdrantUpsertFailed": "Failed to write embeddings to the Qdrant vector database",
 		"vectorDimensionMismatch": "Failed to update vector index for new model. Please try clearing the index and starting again. Details: {{errorMessage}}"
 	},
 	"validation": {
