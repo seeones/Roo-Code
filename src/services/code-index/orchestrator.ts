@@ -170,6 +170,10 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportPendingBatches(pendingCount)
 				}
 
+				const handleQueuedBatchesChange = (queuedCount: number) => {
+					this.stateManager.reportQueuedBatches(queuedCount)
+				}
+
 				const handleRateLimit = (resetTime: number, retryCount: number) => {
 					if (resetTime === 0 && retryCount === 0) {
 						this.stateManager.clearRateLimit()
@@ -177,6 +181,17 @@ export class CodeIndexOrchestrator {
 						this.stateManager.reportRateLimit(resetTime, retryCount)
 					}
 				}
+
+				const handleBatchSlotUpdate = (slotId: number, updates: any) => {
+					this.stateManager.updateBatchSlot(slotId, updates)
+				}
+
+				const handleBatchSlotReset = (slotId: number) => {
+					this.stateManager.resetBatchSlot(slotId)
+				}
+
+				// Initialize batch slots with concurrency
+				this.stateManager.setBatchConcurrency(this.configManager.currentEmbeddingConcurrency)
 
 				// Run incremental scan - scanner will skip unchanged files using cache
 				const result = await this.scanner.scanDirectory(
@@ -194,6 +209,9 @@ export class CodeIndexOrchestrator {
 					handleCurrentFile,
 					handlePendingBatchesChange,
 					handleRateLimit,
+					handleBatchSlotUpdate,
+					handleBatchSlotReset,
+					handleQueuedBatchesChange,
 				)
 
 				if (signal.aborted) {
@@ -251,6 +269,10 @@ export class CodeIndexOrchestrator {
 					this.stateManager.reportPendingBatches(pendingCount)
 				}
 
+				const handleQueuedBatchesChange = (queuedCount: number) => {
+					this.stateManager.reportQueuedBatches(queuedCount)
+				}
+
 				const handleRateLimit = (resetTime: number, retryCount: number) => {
 					if (resetTime === 0 && retryCount === 0) {
 						this.stateManager.clearRateLimit()
@@ -258,6 +280,17 @@ export class CodeIndexOrchestrator {
 						this.stateManager.reportRateLimit(resetTime, retryCount)
 					}
 				}
+
+				const handleBatchSlotUpdate = (slotId: number, updates: any) => {
+					this.stateManager.updateBatchSlot(slotId, updates)
+				}
+
+				const handleBatchSlotReset = (slotId: number) => {
+					this.stateManager.resetBatchSlot(slotId)
+				}
+
+				// Initialize batch slots with concurrency
+				this.stateManager.setBatchConcurrency(this.configManager.currentEmbeddingConcurrency)
 
 				const result = await this.scanner.scanDirectory(
 					this.workspacePath,
@@ -274,6 +307,9 @@ export class CodeIndexOrchestrator {
 					handleCurrentFile,
 					handlePendingBatchesChange,
 					handleRateLimit,
+					handleBatchSlotUpdate,
+					handleBatchSlotReset,
+					handleQueuedBatchesChange,
 				)
 
 				if (signal.aborted) {
