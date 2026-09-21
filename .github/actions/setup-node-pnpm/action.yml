@@ -6,7 +6,7 @@ inputs:
     node-version:
         description: "Node.js version to use"
         required: false
-        default: "20.19.2"
+        default: "24.18.0"
     pnpm-version:
         description: "pnpm version to use"
         required: false
@@ -46,3 +46,5 @@ runs:
           if: ${{ inputs.skip-install != 'true' }}
           shell: bash
           run: pnpm install ${{ inputs.install-args }}
+          env:
+            GITHUB_TOKEN: ${{ github.token }}

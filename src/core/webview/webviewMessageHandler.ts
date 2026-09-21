@@ -598,6 +598,23 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			provider.isViewLaunched = true
 			break
+		case "webviewError":
+			// Observability: webview runtime errors (grey-screen diagnosis).
+			// Logged to the output channel so crashes are never invisible to the extension side.
+			provider.log(
+				`[WebviewError:${message.webviewError?.source ?? "unknown"}] ${message.webviewError?.message ?? "Unknown error"}`,
+			)
+			if (message.webviewError?.stack) {
+				provider.log(`[WebviewErrorStack] ${message.webviewError.stack}`)
+			}
+			if (message.webviewError?.componentStack) {
+				provider.log(`[WebviewErrorComponentStack] ${message.webviewError.componentStack}`)
+			}
+			break
+		case "pong":
+			// Heartbeat response: webview is alive and responsive.
+			provider.handlePong()
+			break
 		case "newTask":
 			// Initializing new instance of Cline will make sure that any
 			// agentically running promises in old instance don't affect our new

@@ -147,6 +147,14 @@ export class ClineProvider
 	 */
 	private clineMessagesSeq = 0
 
+	// Webview heartbeat monitoring for detecting unresponsive webviews (grey screen).
+	private heartbeatInterval?: ReturnType<typeof setInterval>
+	private lastPongTimestamp: number = 0
+	private heartbeatMissCount: number = 0
+	private static readonly HEARTBEAT_INTERVAL_MS = 5000 // Send ping every 5 seconds
+	private static readonly HEARTBEAT_TIMEOUT_MS = 15000 // Consider unresponsive after 15 seconds (3 missed pings)
+	private static readonly MAX_HEARTBEAT_MISSES = 3 // Missed heartbeats before showing recovery option
+
 	public isViewLaunched = false
 	public settingsImportedAt?: number
 	public readonly latestAnnouncementId = "may-2026-final-roo-code-release" // Final Roo Code release announcement.
@@ -546,6 +554,9 @@ export class ClineProvider
 		this._disposed = true
 		this.log("Disposing ClineProvider...")
 
+		// Stop heartbeat monitoring
+		this.stopHeartbeatMonitoring()
+
 		// Clear all tasks from the stack.
 		while (this.clineStack.length > 0) {
 			await this.removeClineFromStack()
@@ -592,6 +603,132 @@ export class ClineProvider
 
 	public static getVisibleInstance(): ClineProvider | undefined {
 		return findLast(Array.from(this.activeInstances), (instance) => instance.view?.visible === true)
+	}
+
+	// ---------------------------------------------------------------------------
+	// Webview Heartbeat Monitoring (grey-screen detection & recovery)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Starts heartbeat monitoring for the webview: periodically sends "ping" to
+	 * the webview and expects a "pong" reply. Missing replies after
+	 * {@link MAX_HEARTBEAT_MISSES} suggests the webview renderer is unresponsive
+	 * (grey screen), in which case a recovery notification is offered.
+	 */
+	private startHeartbeatMonitoring(): void {
+		// Clear any existing heartbeat interval
+		this.stopHeartbeatMonitoring()
+
+		// Initialize heartbeat state
+		this.lastPongTimestamp = Date.now()
+		this.heartbeatMissCount = 0
+
+		this.heartbeatInterval = setInterval(() => {
+			// Only monitor when the webview is visible
+			if (!this.view?.visible) {
+				// Reset miss count when not visible - the webview might be hidden
+				this.heartbeatMissCount = 0
+				return
+			}
+
+			// Send ping to webview
+			this.postMessageToWebview({ type: "ping" })
+
+			// Check if we've received a pong recently
+			const timeSinceLastPong = Date.now() - this.lastPongTimestamp
+
+			if (timeSinceLastPong > ClineProvider.HEARTBEAT_TIMEOUT_MS) {
+				this.heartbeatMissCount++
+				this.log(
+					`[Heartbeat] Webview unresponsive - no pong received for ${Math.round(timeSinceLastPong / 1000)}s (miss count: ${this.heartbeatMissCount})`,
+				)
+
+				// After MAX_HEARTBEAT_MISSES, offer recovery option
+				if (this.heartbeatMissCount >= ClineProvider.MAX_HEARTBEAT_MISSES) {
+					this.handleWebviewUnresponsive()
+				}
+			}
+		}, ClineProvider.HEARTBEAT_INTERVAL_MS)
+
+		this.log("[Heartbeat] Monitoring started")
+	}
+
+	/**
+	 * Stops heartbeat monitoring for the webview.
+	 */
+	private stopHeartbeatMonitoring(): void {
+		if (this.heartbeatInterval) {
+			clearInterval(this.heartbeatInterval)
+			this.heartbeatInterval = undefined
+			this.log("[Heartbeat] Monitoring stopped")
+		}
+	}
+
+	/**
+	 * Handles a "pong" response from the webview, indicating it is still responsive.
+	 * Called by webviewMessageHandler.
+	 */
+	public handlePong(): void {
+		this.lastPongTimestamp = Date.now()
+		this.heartbeatMissCount = 0
+	}
+
+	/**
+	 * Handles the case where the webview becomes unresponsive (grey screen).
+	 * Offers the user a "Reload Panel" recovery option.
+	 */
+	private handleWebviewUnresponsive(): void {
+		// Stop sending more pings while handling the unresponsive state
+		this.stopHeartbeatMonitoring()
+
+		this.log("[Heartbeat] Webview detected as unresponsive, showing recovery notification")
+
+		// Show notification with reload option
+		vscode.window
+			.showWarningMessage(
+				"Roo Code panel has become unresponsive. This can happen during long-running tasks with auto-approval enabled.",
+				"Reload Panel",
+				"Dismiss",
+			)
+			.then((selection) => {
+				if (selection === "Reload Panel") {
+					this.reloadWebview()
+				} else {
+					// If dismissed, restart monitoring in case the user wants to continue
+					this.startHeartbeatMonitoring()
+				}
+			})
+	}
+
+	/**
+	 * Reloads the webview to recover from an unresponsive state.
+	 * The webview re-initializes and requests state via "webviewDidLaunch",
+	 * which triggers postStateToWebview() and restores the UI.
+	 */
+	public async reloadWebview(): Promise<void> {
+		this.log("[Heartbeat] Reloading webview...")
+
+		if (!this.view?.webview) {
+			this.log("[Heartbeat] Cannot reload - no webview available")
+			return
+		}
+
+		try {
+			// Regenerate and set the HTML content
+			this.view.webview.html =
+				this.contextProxy.extensionMode === vscode.ExtensionMode.Development
+					? await this.getHMRHtmlContent(this.view.webview)
+					: await this.getHtmlContent(this.view.webview)
+
+			// Restart heartbeat monitoring after reload
+			this.startHeartbeatMonitoring()
+
+			this.log("[Heartbeat] Webview reloaded successfully")
+			vscode.window.showInformationMessage("Roo Code panel has been reloaded.")
+		} catch (error) {
+			this.log(`[Heartbeat] Failed to reload webview: ${error instanceof Error ? error.message : String(error)}`)
+			vscode.window.showErrorMessage("Failed to reload Roo Code panel. Please try reopening the panel manually.")
+		}
 	}
 
 	public static async getInstance(): Promise<ClineProvider | undefined> {
@@ -820,6 +957,9 @@ export class ClineProvider
 		if (!currentTask || currentTask.abandoned || currentTask.abort) {
 			await this.removeClineFromStack()
 		}
+
+		// Start heartbeat monitoring to detect unresponsive webviews (grey screen).
+		this.startHeartbeatMonitoring()
 	}
 
 	public async createTaskWithHistoryItem(
@@ -1902,7 +2042,8 @@ export class ClineProvider
 				: []
 
 			// Get workspace configuration commands
-			const workspaceCommands = vscode.workspace.getConfiguration(Package.configPrefix).get<string[]>(configKey) || []
+			const workspaceCommands =
+				vscode.workspace.getConfiguration(Package.configPrefix).get<string[]>(configKey) || []
 
 			// Validate and sanitize workspace commands
 			const validWorkspaceCommands = Array.isArray(workspaceCommands)

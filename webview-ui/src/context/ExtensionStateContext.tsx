@@ -280,6 +280,13 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		(event: MessageEvent) => {
 			const message: ExtensionMessage = event.data
 			switch (message.type) {
+				case "ping": {
+					// Heartbeat: respond immediately to prove the webview renderer is alive.
+					// If the renderer is frozen (grey screen), the extension host will
+					// eventually offer a "Reload Panel" recovery option.
+					vscode.postMessage({ type: "pong" })
+					break
+				}
 				case "state": {
 					const newState = message.state ?? {}
 					setState((prevState) => mergeExtensionState(prevState, newState))
