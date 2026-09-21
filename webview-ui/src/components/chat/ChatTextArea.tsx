@@ -27,6 +27,7 @@ import { StandardTooltip } from "@src/components/ui"
 import Thumbnails from "../common/Thumbnails"
 import { ModeSelector } from "./ModeSelector"
 import { ApiConfigSelector } from "./ApiConfigSelector"
+import { ChatModelSelector } from "./ChatModelSelector"
 import { AutoApproveDropdown } from "./AutoApproveDropdown"
 import { MAX_IMAGES_PER_MESSAGE } from "./ChatView"
 import ContextMenu from "./ContextMenu"
@@ -96,6 +97,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			clineMessages,
 			commands,
 			enterBehavior,
+			chatInputEffect,
 			lockApiConfigAcrossModes,
 		} = useExtensionState()
 
@@ -1008,171 +1010,149 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							</div>
 						)}
 
-						<div
-							className={cn(
-								"relative",
-								"flex-1",
-								"flex",
-								"flex-col-reverse",
-								"min-h-0",
-								"overflow-hidden",
-								"rounded-lg",
-							)}>
-							<div
-								ref={highlightLayerRef}
-								data-testid="highlight-layer"
-								className={cn(
-									"absolute",
-									"inset-0",
-									"pointer-events-none",
-									"whitespace-pre-wrap",
-									"break-words",
-									"text-transparent",
-									"overflow-hidden",
-									"font-vscode-font-family",
-									"text-vscode-editor-font-size",
-									"leading-vscode-editor-line-height",
-									isFocused
-										? "border border-vscode-focusBorder outline outline-vscode-focusBorder"
-										: isDraggingOver
+						<div className={cn("relative", "flex-1", "flex", "flex-col-reverse", "min-h-0")}>
+							{/* Streaming border effect — marquee (conic-gradient light beam) or breathing (pulsing glow + 1px ring).
+							    Selected via Settings → UI → chatInputEffect. Only shown while AI is executing. */}
+							{!isDraggingOver && isStreaming && (chatInputEffect ?? "marquee") === "marquee" && (
+								<div
+									className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none z-[15] forced-color-adjust-none"
+									data-testid="streaming-border">
+									<div
+										className="absolute inset-0 rounded-lg pointer-events-none animate-[border-spin_3s_linear_infinite] forced-color-adjust-none"
+										style={{
+											padding: "1px",
+											background:
+												"conic-gradient(from var(--angle), transparent 0deg, transparent 300deg, var(--vscode-focusBorder) 330deg, var(--vscode-input-border) 350deg, transparent 360deg)",
+											WebkitMask:
+												"linear-gradient(#000, #000) padding-box, linear-gradient(#000, #000) content-box",
+											WebkitMaskComposite: "exclude",
+											mask: "linear-gradient(#000, #000) padding-box, linear-gradient(#000, #000) content-box",
+											maskComposite: "exclude",
+										}}
+									/>
+								</div>
+							)}
+							{/* Breathing border effect — pulsing glow + 1px blue ring. No overflow-hidden needed (box-shadow would be clipped). */}
+							{!isDraggingOver && isStreaming && chatInputEffect === "breathing" && (
+								<div
+									className="absolute inset-0 rounded-lg pointer-events-none z-[15] forced-color-adjust-none"
+									data-testid="streaming-border">
+									<div className="absolute inset-0 rounded-lg animate-streaming-glow pointer-events-none" />
+									<div className="absolute inset-0 rounded-lg border border-vscode-focusBorder animate-[border-breathe_2s_ease-in-out_infinite] pointer-events-none" />
+								</div>
+							)}
+							{/* Inner container: relative (positioning anchor for the absolute buttons),
+							    input background masks the gradient center, overflow-hidden clips to inner edge */}
+							<div className="relative flex flex-col-reverse flex-1 min-h-0 overflow-hidden rounded-[calc(0.5rem-2px)] bg-vscode-input-background">
+								<div
+									ref={highlightLayerRef}
+									data-testid="highlight-layer"
+									className={cn(
+										"absolute",
+										"inset-0",
+										"pointer-events-none",
+										"whitespace-pre-wrap",
+										"break-words",
+										"text-transparent",
+										"overflow-hidden",
+										"font-vscode-font-family",
+										"text-vscode-editor-font-size",
+										"leading-vscode-editor-line-height",
+										isDraggingOver
 											? "border-2 border-dashed border-vscode-focusBorder"
-											: "border border-transparent",
-									"pl-2",
-									"py-2",
-									isEditMode ? "pr-20" : "pr-9",
-									"z-10",
-									"forced-color-adjust-none",
-									"rounded-lg",
-								)}
-								style={{
-									color: "transparent",
-								}}
-							/>
-							<DynamicTextArea
-								ref={(el) => {
-									if (typeof ref === "function") {
-										ref(el)
-									} else if (ref) {
-										ref.current = el
-									}
-									textAreaRef.current = el
-								}}
-								value={inputValue}
-								onChange={(e) => {
-									handleInputChange(e)
-									updateHighlights()
-								}}
-								onFocus={() => setIsFocused(true)}
-								onKeyDown={(e) => {
-									// Handle ESC to cancel in edit mode
-									if (isEditMode && e.key === "Escape" && !e.nativeEvent?.isComposing) {
-										e.preventDefault()
-										onCancel?.()
-										return
-									}
-									handleKeyDown(e)
-								}}
-								onKeyUp={handleKeyUp}
-								onBlur={handleBlur}
-								onPaste={handlePaste}
-								onSelect={updateCursorPosition}
-								onMouseUp={updateCursorPosition}
-								onHeightChange={(height) => {
-									if (textAreaBaseHeight === undefined || height < textAreaBaseHeight) {
-										setTextAreaBaseHeight(height)
-									}
+											: isFocused
+												? "border border-vscode-focusBorder"
+												: "border border-vscode-input-border",
+										"pl-2",
+										"py-2",
+										isEditMode ? "pr-20" : "pr-9",
+										"z-10",
+										"forced-color-adjust-none",
+										"rounded-lg",
+									)}
+									style={{
+										color: "transparent",
+									}}
+								/>
+								<DynamicTextArea
+									ref={(el) => {
+										if (typeof ref === "function") {
+											ref(el)
+										} else if (ref) {
+											ref.current = el
+										}
+										textAreaRef.current = el
+									}}
+									value={inputValue}
+									onChange={(e) => {
+										handleInputChange(e)
+										updateHighlights()
+									}}
+									onFocus={() => setIsFocused(true)}
+									onKeyDown={(e) => {
+										// Handle ESC to cancel in edit mode
+										if (isEditMode && e.key === "Escape" && !e.nativeEvent?.isComposing) {
+											e.preventDefault()
+											onCancel?.()
+											return
+										}
+										handleKeyDown(e)
+									}}
+									onKeyUp={handleKeyUp}
+									onBlur={handleBlur}
+									onPaste={handlePaste}
+									onSelect={updateCursorPosition}
+									onMouseUp={updateCursorPosition}
+									onHeightChange={(height) => {
+										if (textAreaBaseHeight === undefined || height < textAreaBaseHeight) {
+											setTextAreaBaseHeight(height)
+										}
 
-									onHeightChange?.(height)
-								}}
-								placeholder={placeholderText}
-								minRows={3}
-								maxRows={15}
-								autoFocus={true}
-								className={cn(
-									"w-full",
-									"text-vscode-input-foreground",
-									"font-vscode-font-family",
-									"text-vscode-editor-font-size",
-									"leading-vscode-editor-line-height",
-									"cursor-text",
-									"py-2 pl-2",
-									isFocused
-										? "border border-vscode-focusBorder outline outline-vscode-focusBorder"
-										: isDraggingOver
+										onHeightChange?.(height)
+									}}
+									placeholder={placeholderText}
+									minRows={3}
+									maxRows={15}
+									autoFocus={true}
+									className={cn(
+										"w-full",
+										"text-vscode-input-foreground",
+										"font-vscode-font-family",
+										"text-vscode-editor-font-size",
+										"leading-vscode-editor-line-height",
+										"cursor-text",
+										"py-2 pl-2",
+										isDraggingOver
 											? "border-2 border-dashed border-vscode-focusBorder"
-											: "border border-transparent",
-									isDraggingOver
-										? "bg-[color-mix(in_srgb,var(--vscode-input-background)_95%,var(--vscode-focusBorder))]"
-										: "bg-vscode-input-background",
-									"transition-background-color duration-150 ease-in-out",
-									"will-change-background-color",
-									"min-h-[94px]",
-									"box-border",
-									"rounded",
-									"resize-none",
-									"overflow-x-hidden",
-									"overflow-y-auto",
-									isEditMode ? "pr-20" : "pr-9",
-									"flex-none flex-grow",
-									"z-[2]",
-									"scrollbar-none",
-									"scrollbar-hide",
-								)}
-								onScroll={() => updateHighlights()}
-							/>
+											: isFocused
+												? "border border-vscode-focusBorder"
+												: "border border-vscode-input-border",
+										isDraggingOver
+											? "bg-[color-mix(in_srgb,var(--vscode-input-background)_95%,var(--vscode-focusBorder))]"
+											: "bg-vscode-input-background",
+										"transition-background-color duration-150 ease-in-out",
+										"will-change-background-color",
+										"min-h-[94px]",
+										"box-border",
+										"rounded",
+										"resize-none",
+										"overflow-x-hidden",
+										"overflow-y-auto",
+										isEditMode ? "pr-20" : "pr-9",
+										"flex-none flex-grow",
+										"z-[2]",
+										"scrollbar-none",
+										"scrollbar-hide",
+									)}
+									onScroll={() => updateHighlights()}
+								/>
 
-							<div className="absolute bottom-2 right-1 z-30 flex flex-col items-center gap-0">
-								<StandardTooltip content={t("chat:addImages")}>
-									<button
-										aria-label={t("chat:addImages")}
-										disabled={shouldDisableImages}
-										onClick={!shouldDisableImages ? onSelectImages : undefined}
-										className={cn(
-											"relative inline-flex items-center justify-center",
-											"bg-transparent border-none p-1.5",
-											"rounded-md min-w-[28px] min-h-[28px]",
-											"text-vscode-descriptionForeground hover:text-vscode-foreground",
-											"transition-all duration-1000",
-											"cursor-pointer",
-											!shouldDisableImages
-												? "opacity-50 hover:opacity-100 delay-750 pointer-events-auto"
-												: "opacity-0 pointer-events-none duration-200 delay-0",
-											!shouldDisableImages &&
-												"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
-											"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
-											!shouldDisableImages && "active:bg-[rgba(255,255,255,0.1)]",
-											shouldDisableImages &&
-												"opacity-40 cursor-not-allowed grayscale-[30%] hover:bg-transparent hover:border-[rgba(255,255,255,0.08)] active:bg-transparent",
-										)}>
-										<Image className="w-4 h-4" />
-									</button>
-								</StandardTooltip>
-								{isEditMode ? (
-									<StandardTooltip content={t("chat:cancel.title")}>
+								<div className="absolute bottom-2 right-1 z-30 flex flex-col items-center gap-0">
+									<StandardTooltip content={t("chat:addImages")}>
 										<button
-											aria-label={t("chat:cancel.title")}
-											disabled={false}
-											onClick={onCancel}
-											className={cn(
-												"relative inline-flex items-center justify-center",
-												"bg-transparent border-none p-1.5",
-												"rounded-md min-w-[28px] min-h-[28px]",
-												"opacity-60 hover:opacity-100 text-vscode-descriptionForeground hover:text-vscode-foreground",
-												"transition-all duration-150",
-												"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
-												"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
-												"active:bg-[rgba(255,255,255,0.1)]",
-												"cursor-pointer",
-											)}>
-											<X className="w-4 h-4" />
-										</button>
-									</StandardTooltip>
-								) : (
-									<StandardTooltip content={t("chat:enhancePrompt")}>
-										<button
-											aria-label={t("chat:enhancePrompt")}
-											disabled={false}
-											onClick={handleEnhancePrompt}
+											aria-label={t("chat:addImages")}
+											disabled={shouldDisableImages}
+											onClick={!shouldDisableImages ? onSelectImages : undefined}
 											className={cn(
 												"relative inline-flex items-center justify-center",
 												"bg-transparent border-none p-1.5",
@@ -1180,104 +1160,151 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 												"text-vscode-descriptionForeground hover:text-vscode-foreground",
 												"transition-all duration-1000",
 												"cursor-pointer",
-												hasInputContent
+												!shouldDisableImages
 													? "opacity-50 hover:opacity-100 delay-750 pointer-events-auto"
 													: "opacity-0 pointer-events-none duration-200 delay-0",
-												hasInputContent &&
+												!shouldDisableImages &&
 													"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
 												"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
-												hasInputContent && "active:bg-[rgba(255,255,255,0.1)]",
+												!shouldDisableImages && "active:bg-[rgba(255,255,255,0.1)]",
+												shouldDisableImages &&
+													"opacity-40 cursor-not-allowed grayscale-[30%] hover:bg-transparent hover:border-[rgba(255,255,255,0.08)] active:bg-transparent",
 											)}>
-											<WandSparkles
-												className={cn("w-4 h-4", isEnhancingPrompt && "animate-spin")}
-											/>
+											<Image className="w-4 h-4" />
 										</button>
 									</StandardTooltip>
-								)}
-								{/* Queue button - shown when streaming and user has typed content */}
-								{!isEditMode && isStreaming && hasInputContent && onEnqueueMessage && (
-									<StandardTooltip content={t("chat:enqueueMessage")}>
-										<button
-											aria-label={t("chat:enqueueMessage")}
-											disabled={false}
-											onClick={onEnqueueMessage}
-											className={cn(
-												"relative inline-flex items-center justify-center",
-												"bg-transparent border-none p-1.5",
-												"rounded-md min-w-[28px] min-h-[28px]",
-												"text-vscode-descriptionForeground hover:text-vscode-foreground",
-												"transition-all duration-200",
-												"opacity-100 hover:opacity-100 pointer-events-auto",
-												"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
-												"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
-												"active:bg-[rgba(255,255,255,0.1)]",
-												"cursor-pointer",
-											)}>
-											<ListEnd className="w-4 h-4" />
-										</button>
-									</StandardTooltip>
-								)}
-								{/* Send/Stop button - morphs based on streaming state, always visible in edit mode */}
-								<StandardTooltip
-									content={
-										isEditMode
-											? t("chat:pressToSend", { keyCombination: sendKeyCombination })
-											: isStreaming
-												? t("chat:stop.title")
-												: t("chat:pressToSend", { keyCombination: sendKeyCombination })
-									}>
-									<button
-										aria-label={
+									{isEditMode ? (
+										<StandardTooltip content={t("chat:cancel.title")}>
+											<button
+												aria-label={t("chat:cancel.title")}
+												disabled={false}
+												onClick={onCancel}
+												className={cn(
+													"relative inline-flex items-center justify-center",
+													"bg-transparent border-none p-1.5",
+													"rounded-md min-w-[28px] min-h-[28px]",
+													"opacity-60 hover:opacity-100 text-vscode-descriptionForeground hover:text-vscode-foreground",
+													"transition-all duration-150",
+													"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
+													"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
+													"active:bg-[rgba(255,255,255,0.1)]",
+													"cursor-pointer",
+												)}>
+												<X className="w-4 h-4" />
+											</button>
+										</StandardTooltip>
+									) : (
+										<StandardTooltip content={t("chat:enhancePrompt")}>
+											<button
+												aria-label={t("chat:enhancePrompt")}
+												disabled={false}
+												onClick={handleEnhancePrompt}
+												className={cn(
+													"relative inline-flex items-center justify-center",
+													"bg-transparent border-none p-1.5",
+													"rounded-md min-w-[28px] min-h-[28px]",
+													"text-vscode-descriptionForeground hover:text-vscode-foreground",
+													"transition-all duration-1000",
+													"cursor-pointer",
+													hasInputContent
+														? "opacity-50 hover:opacity-100 delay-750 pointer-events-auto"
+														: "opacity-0 pointer-events-none duration-200 delay-0",
+													hasInputContent &&
+														"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
+													"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
+													hasInputContent && "active:bg-[rgba(255,255,255,0.1)]",
+												)}>
+												<WandSparkles
+													className={cn("w-4 h-4", isEnhancingPrompt && "animate-spin")}
+												/>
+											</button>
+										</StandardTooltip>
+									)}
+									{/* Queue button - shown when streaming and user has typed content */}
+									{!isEditMode && isStreaming && hasInputContent && onEnqueueMessage && (
+										<StandardTooltip content={t("chat:enqueueMessage")}>
+											<button
+												aria-label={t("chat:enqueueMessage")}
+												disabled={false}
+												onClick={onEnqueueMessage}
+												className={cn(
+													"relative inline-flex items-center justify-center",
+													"bg-transparent border-none p-1.5",
+													"rounded-md min-w-[28px] min-h-[28px]",
+													"text-vscode-descriptionForeground hover:text-vscode-foreground",
+													"transition-all duration-200",
+													"opacity-100 hover:opacity-100 pointer-events-auto",
+													"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
+													"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
+													"active:bg-[rgba(255,255,255,0.1)]",
+													"cursor-pointer",
+												)}>
+												<ListEnd className="w-4 h-4" />
+											</button>
+										</StandardTooltip>
+									)}
+									{/* Send/Stop button - morphs based on streaming state, always visible in edit mode */}
+									<StandardTooltip
+										content={
 											isEditMode
 												? t("chat:pressToSend", { keyCombination: sendKeyCombination })
 												: isStreaming
 													? t("chat:stop.title")
 													: t("chat:pressToSend", { keyCombination: sendKeyCombination })
-										}
-										disabled={false}
-										onClick={isStreaming ? onStop : onSend}
-										className={cn(
-											"relative inline-flex items-center justify-center",
-											"bg-transparent border-none p-1.5",
-											"rounded-full min-w-[28px] min-h-[28px]",
-											"text-vscode-descriptionForeground hover:text-vscode-foreground",
-											"transition-all duration-200",
-											isEditMode || isStreaming || hasInputContent
-												? "opacity-100 hover:opacity-100 pointer-events-auto"
-												: "opacity-0 pointer-events-none",
-											(isEditMode || isStreaming || hasInputContent) &&
-												"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
-											"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
-											(isEditMode || isStreaming || hasInputContent) &&
-												"active:bg-[rgba(255,255,255,0.1)]",
-											(isEditMode || isStreaming || hasInputContent) && "cursor-pointer",
-											isStreaming &&
-												"bg-vscode-button-background hover:bg-vscode-button-background",
-										)}>
-										{isStreaming ? (
-											<Square className="size-4 stroke-none fill-vscode-button-foreground" />
-										) : (
-											<SendHorizontal className="size-4" />
-										)}
-									</button>
-								</StandardTooltip>
-							</div>
-
-							{!inputValue && (
-								<div
-									className={cn(
-										"absolute left-2 z-30 flex items-center h-8 font-vscode-font-family text-vscode-editor-font-size leading-vscode-editor-line-height",
-										isEditMode ? "pr-20" : "pr-9",
-									)}
-									style={{
-										bottom: "0.75rem",
-										color: "color-mix(in oklab, var(--vscode-input-foreground) 50%, transparent)",
-										userSelect: "none",
-										pointerEvents: "none",
-									}}>
-									{placeholderBottomText}
+										}>
+										<button
+											aria-label={
+												isEditMode
+													? t("chat:pressToSend", { keyCombination: sendKeyCombination })
+													: isStreaming
+														? t("chat:stop.title")
+														: t("chat:pressToSend", { keyCombination: sendKeyCombination })
+											}
+											disabled={false}
+											onClick={isStreaming ? onStop : onSend}
+											className={cn(
+												"relative inline-flex items-center justify-center",
+												"bg-transparent border-none p-1.5",
+												"rounded-full min-w-[28px] min-h-[28px]",
+												"text-vscode-descriptionForeground hover:text-vscode-foreground",
+												"transition-all duration-200",
+												isEditMode || isStreaming || hasInputContent
+													? "opacity-100 hover:opacity-100 pointer-events-auto"
+													: "opacity-0 pointer-events-none",
+												(isEditMode || isStreaming || hasInputContent) &&
+													"hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.15)]",
+												"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
+												(isEditMode || isStreaming || hasInputContent) &&
+													"active:bg-[rgba(255,255,255,0.1)]",
+												(isEditMode || isStreaming || hasInputContent) && "cursor-pointer",
+												isStreaming &&
+													"bg-vscode-button-background hover:bg-vscode-button-background",
+											)}>
+											{isStreaming ? (
+												<Square className="size-4 stroke-none fill-vscode-button-foreground" />
+											) : (
+												<SendHorizontal className="size-4" />
+											)}
+										</button>
+									</StandardTooltip>
 								</div>
-							)}
+
+								{!inputValue && (
+									<div
+										className={cn(
+											"absolute left-2 z-30 flex items-center h-8 font-vscode-font-family text-vscode-editor-font-size leading-vscode-editor-line-height",
+											isEditMode ? "pr-20" : "pr-9",
+										)}
+										style={{
+											bottom: "0.75rem",
+											color: "color-mix(in oklab, var(--vscode-input-foreground) 50%, transparent)",
+											userSelect: "none",
+											pointerEvents: "none",
+										}}>
+										{placeholderBottomText}
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1317,6 +1344,11 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							togglePinnedApiConfig={togglePinnedApiConfig}
 							lockApiConfigAcrossModes={!!lockApiConfigAcrossModes}
 							onToggleLockApiConfig={handleToggleLockApiConfig}
+						/>
+						<ChatModelSelector
+							disabled={selectApiConfigDisabled}
+							title={t("chat:selectModel")}
+							triggerClassName="min-w-[28px] text-ellipsis overflow-hidden flex-shrink"
 						/>
 						<AutoApproveDropdown triggerClassName="min-w-[28px] text-ellipsis overflow-hidden flex-shrink" />
 					</div>

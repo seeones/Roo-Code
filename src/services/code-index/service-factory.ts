@@ -177,13 +177,22 @@ export class CodeIndexServiceFactory {
 		let batchSize: number
 		try {
 			batchSize = vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
 		} catch {
 			// In test environment, vscode.workspace might not be available
 			batchSize = BATCH_SEGMENT_THRESHOLD
 		}
-		return new DirectoryScanner(embedder, vectorStore, parser, this.cacheManager, ignoreInstance, batchSize)
+		const concurrency = this.configManager.currentEmbeddingConcurrency
+		return new DirectoryScanner(
+			embedder,
+			vectorStore,
+			parser,
+			this.cacheManager,
+			ignoreInstance,
+			batchSize,
+			concurrency,
+		)
 	}
 
 	/**
@@ -201,12 +210,13 @@ export class CodeIndexServiceFactory {
 		let batchSize: number
 		try {
 			batchSize = vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
 		} catch {
 			// In test environment, vscode.workspace might not be available
 			batchSize = BATCH_SEGMENT_THRESHOLD
 		}
+		const concurrency = this.configManager.currentEmbeddingConcurrency
 		return new FileWatcher(
 			this.workspacePath,
 			context,
@@ -216,6 +226,7 @@ export class CodeIndexServiceFactory {
 			ignoreInstance,
 			rooIgnoreController,
 			batchSize,
+			concurrency,
 		)
 	}
 

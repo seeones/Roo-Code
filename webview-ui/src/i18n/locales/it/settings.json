@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "Ripristina al valore predefinito (0.4)",
 		"searchMaxResultsLabel": "Risultati di ricerca massimi",
 		"searchMaxResultsDescription": "Numero massimo di risultati di ricerca da restituire quando si interroga l'indice del codice. Valori più alti forniscono più contesto ma possono includere risultati meno pertinenti.",
+		"embeddingConcurrencyLabel": "Concorrenza richieste di embedding",
+		"embeddingConcurrencyDescription": "Numero di richieste di embedding simultanee durante l'indicizzazione. Valori più bassi riducono i problemi di limite di velocità dell'API ma rallentano l'indicizzazione. Valori più alti accelerano l'indicizzazione ma possono attivare i limiti di velocità.",
+		"pendingBatches": "{{count}} batch in coda",
+		"batchSummary": "{{active}} attivi / {{queued}} in coda / {{total}} batch totali",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "blocchi",
+		"retryCount": "nuovo tentativo {{count}}",
+		"batchStage": {
+			"idle": "Inattivo",
+			"embedding": "Richiesta API di embedding",
+			"rate_limited": "Limite di velocità",
+			"upserting": "Scrittura nel negozio vettoriale"
+		},
+		"rateLimited": "Limite di velocità API (nuovo tentativo {{retryCount}}) — attesa prima di riprovare",
 		"resetToDefault": "Ripristina al valore predefinito",
 		"stopIndexingButton": "Interrompi indicizzazione",
 		"stoppingButton": "Interruzione...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "Comprimi i messaggi di pensiero per impostazione predefinita",
 			"description": "Se abilitato, i blocchi di pensiero verranno compressi per impostazione predefinita finché non interagisci con essi"
+		},
+		"chatInputEffect": {
+			"label": "Effetto della casella di input mentre l'IA lavora",
+			"marquee": "Scorrimento (bordo rotante)",
+			"breathing": "Respirazione (bagliore pulsante)",
+			"description": "Scegli l'effetto di animazione del bordo sulla casella di input della chat mentre l'IA lavora"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "Richiedi {{primaryMod}}+Invio per inviare messaggi",

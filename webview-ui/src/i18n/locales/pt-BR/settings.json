@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "Redefinir para o valor padrão (0.4)",
 		"searchMaxResultsLabel": "Resultados máximos de busca",
 		"searchMaxResultsDescription": "Número máximo de resultados de busca a retornar ao consultar o índice de código. Valores mais altos fornecem mais contexto, mas podem incluir resultados menos relevantes.",
+		"embeddingConcurrencyLabel": "Concorrência de solicitações de embedding",
+		"embeddingConcurrencyDescription": "Número de solicitações de embedding simultâneas durante a indexação. Valores mais baixos reduzem problemas de limite de taxa da API, mas desaceleram a indexação. Valores mais altos aceleram a indexação, mas podem acionar limites de taxa.",
+		"pendingBatches": "{{count}} lotes na fila",
+		"batchSummary": "{{active}} ativos / {{queued}} na fila / {{total}} lotes no total",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "blocos",
+		"retryCount": "tentar novamente {{count}}",
+		"batchStage": {
+			"idle": "Ocioso",
+			"embedding": "Solicitando API de embedding",
+			"rate_limited": "Limite de taxa",
+			"upserting": "Gravando no armazenamento vetorial"
+		},
+		"rateLimited": "Limite de taxa da API (tentar novamente {{retryCount}}) — aguardando antes de tentar novamente",
 		"resetToDefault": "Redefinir para o padrão",
 		"stopIndexingButton": "Parar indexação",
 		"stoppingButton": "Parando...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "Recolher mensagens de pensamento por padrão",
 			"description": "Quando ativado, os blocos de pensamento serão recolhidos por padrão até que você interaja com eles"
+		},
+		"chatInputEffect": {
+			"label": "Efeito da caixa de entrada enquanto a IA trabalha",
+			"marquee": "Marquee (borda giratória)",
+			"breathing": "Respiração (brilho pulsante)",
+			"description": "Escolha o efeito de animação da borda na caixa de entrada do chat enquanto a IA trabalha"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "Requer {{primaryMod}}+Enter para enviar mensagens",

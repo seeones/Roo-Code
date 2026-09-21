@@ -53,6 +53,7 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 
 		configManager = {
 			isFeatureConfigured: true,
+			currentEmbeddingConcurrency: 10,
 		}
 
 		// Minimal state manager that tracks state transitions
@@ -66,6 +67,14 @@ describe("CodeIndexOrchestrator - error path cleanup gating", () => {
 			}),
 			reportFileQueueProgress: vi.fn(),
 			reportBlockIndexingProgress: vi.fn(),
+			reportCurrentFile: vi.fn(),
+			reportPendingBatches: vi.fn(),
+			reportQueuedBatches: vi.fn(),
+			reportRateLimit: vi.fn(),
+			clearRateLimit: vi.fn(),
+			setBatchConcurrency: vi.fn(),
+			updateBatchSlot: vi.fn(),
+			resetBatchSlot: vi.fn(),
 		}
 
 		cacheManager = {
@@ -166,6 +175,7 @@ describe("CodeIndexOrchestrator - stopIndexing", () => {
 
 		configManager = {
 			isFeatureConfigured: true,
+			currentEmbeddingConcurrency: 10,
 		}
 
 		let currentState = "Standby"
@@ -178,6 +188,14 @@ describe("CodeIndexOrchestrator - stopIndexing", () => {
 			}),
 			reportFileQueueProgress: vi.fn(),
 			reportBlockIndexingProgress: vi.fn(),
+			reportCurrentFile: vi.fn(),
+			reportPendingBatches: vi.fn(),
+			reportQueuedBatches: vi.fn(),
+			reportRateLimit: vi.fn(),
+			clearRateLimit: vi.fn(),
+			setBatchConcurrency: vi.fn(),
+			updateBatchSlot: vi.fn(),
+			resetBatchSlot: vi.fn(),
 		}
 
 		cacheManager = {

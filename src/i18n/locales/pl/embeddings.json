@@ -30,6 +30,7 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Nie udało się połączyć z bazą danych wektorowych Qdrant. Upewnij się, że Qdrant jest uruchomiony i dostępny pod adresem {{qdrantUrl}}. Błąd: {{errorMessage}}",
+		"qdrantUpsertFailed": "Nie udało się zapisać wektorów osadzeń do bazy wektorowej Qdrant",
 		"vectorDimensionMismatch": "Nie udało się zaktualizować indeksu wektorowego dla nowego modelu. Spróbuj wyczyścić indeks i zacząć od nowa. Szczegóły: {{errorMessage}}"
 	},
 	"validation": {

@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "恢复默认值 (0.4)",
 		"searchMaxResultsLabel": "最大搜索结果数",
 		"searchMaxResultsDescription": "查询代码库索引时返回的最大搜索结果数。较高的值提供更多上下文，但可能包含相关性较低的结果。",
+		"embeddingConcurrencyLabel": "嵌入请求并发数",
+		"embeddingConcurrencyDescription": "索引期间同时发送的嵌入请求数。较低的值可减少 API 限流问题，但会减慢索引速度。较高的值可加快索引速度，但可能触发速率限制。",
+		"pendingBatches": "队列中有 {{count}} 个批次待处理",
+		"batchSummary": "{{active}} 个执行中 / {{queued}} 个排队 / 共 {{total}} 个批次",
+		"batchSlotLabel": "槽位 {{id}}",
+		"blocksUnit": "块",
+		"retryCount": "第 {{count}} 次重试",
+		"batchStage": {
+			"idle": "空闲",
+			"embedding": "请求 Embedding API",
+			"rate_limited": "限流等待中",
+			"upserting": "写入向量库"
+		},
+		"rateLimited": "API 限流中（第 {{retryCount}} 次重试）— 等待后重试",
 		"resetToDefault": "恢复默认值",
 		"stopIndexingButton": "停止索引",
 		"stoppingButton": "正在停止...",
@@ -941,6 +955,12 @@
 		"requireCtrlEnterToSend": {
 			"label": "需要 {{primaryMod}}+Enter 发送消息",
 			"description": "启用后，必须按 {{primaryMod}}+Enter 发送消息，而不仅仅是 Enter"
+		},
+		"chatInputEffect": {
+			"label": "AI工作时输入框动效",
+			"marquee": "走马灯效果（旋转光晕）",
+			"breathing": "呼吸效果（脉冲光晕）",
+			"description": "选择 AI 工作时输入框的边框动画效果"
 		}
 	},
 	"skills": {

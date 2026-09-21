@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "Zresetuj do wartości domyślnej (0.4)",
 		"searchMaxResultsLabel": "Maksymalna liczba wyników wyszukiwania",
 		"searchMaxResultsDescription": "Maksymalna liczba wyników wyszukiwania zwracanych podczas zapytania do indeksu bazy kodu. Wyższe wartości zapewniają więcej kontekstu, ale mogą zawierać mniej istotne wyniki.",
+		"embeddingConcurrencyLabel": "Współbieżność żądań embedding",
+		"embeddingConcurrencyDescription": "Liczba równoczesnych żądań embedding podczas indeksowania. Niższe wartości zmniejszają problemy z limitami szybkości API, ale spowalniają indeksowanie. Wyższe wartości przyspieszają indeksowanie, ale mogą wywołać limity szybkości.",
+		"pendingBatches": "{{count}} partii w kolejce",
+		"batchSummary": "{{active}} aktywnych / {{queued}} w kolejce / {{total}} partii łącznie",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "bloki",
+		"retryCount": "ponów próbę {{count}}",
+		"batchStage": {
+			"idle": "Bezczynny",
+			"embedding": "Żądanie API embedding",
+			"rate_limited": "Limit szybkości",
+			"upserting": "Zapisywanie do magazynu wektorów"
+		},
+		"rateLimited": "Limit szybkości API (ponów próbę {{retryCount}}) — oczekiwanie przed ponowną próbą",
 		"resetToDefault": "Przywróć domyślne",
 		"stopIndexingButton": "Zatrzymaj indeksowanie",
 		"stoppingButton": "Zatrzymywanie...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "Domyślnie zwijaj komunikaty o myśleniu",
 			"description": "Gdy włączone, bloki myślenia będą domyślnie zwinięte, dopóki nie wejdziesz z nimi w interakcję"
+		},
+		"chatInputEffect": {
+			"label": "Efekt pola wprowadzania podczas pracy AI",
+			"marquee": "Marquee (obracająca się ramka)",
+			"breathing": "Oddychanie (pulsująca poświata)",
+			"description": "Wybierz efekt animacji ramki pola wprowadzania czatu podczas pracy AI"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "Wymagaj {{primaryMod}}+Enter do wysyłania wiadomości",

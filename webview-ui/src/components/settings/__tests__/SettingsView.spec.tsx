@@ -60,6 +60,15 @@ vi.mock("@vscode/webview-ui-toolkit/react", () => ({
 		<input type="radio" value={value} checked={checked} onChange={onChange} />
 	),
 	VSCodeRadioGroup: ({ children, onChange }: any) => <div onChange={onChange}>{children}</div>,
+	VSCodeDropdown: ({ value, onChange, children, "data-testid": dataTestId }: any) => (
+		<select
+			value={value}
+			onChange={(e) => onChange({ target: { value: e.target.value } })}
+			data-testid={dataTestId}>
+			{children}
+		</select>
+	),
+	VSCodeOption: ({ value, children }: any) => <option value={value}>{children}</option>,
 	VSCodeTextArea: ({ value, onChange, rows, className, "data-testid": dataTestId }: any) => (
 		<textarea
 			value={value}

@@ -36,7 +36,7 @@ export class FileWatcher implements IFileWatcher {
 	private accumulatedEvents: Map<string, { uri: vscode.Uri; type: "create" | "change" | "delete" }> = new Map()
 	private batchProcessDebounceTimer?: NodeJS.Timeout
 	private readonly BATCH_DEBOUNCE_DELAY_MS = 500
-	private readonly FILE_PROCESSING_CONCURRENCY_LIMIT = 10
+	private readonly FILE_PROCESSING_CONCURRENCY_LIMIT: number
 	private readonly batchSegmentThreshold: number
 
 	private readonly _onDidStartBatchProcessing = new vscode.EventEmitter<string[]>()
@@ -79,6 +79,7 @@ export class FileWatcher implements IFileWatcher {
 		ignoreInstance?: Ignore,
 		ignoreController?: RooIgnoreController,
 		batchSegmentThreshold?: number,
+		fileProcessingConcurrency?: number,
 	) {
 		this.ignoreController = ignoreController || new RooIgnoreController(workspacePath)
 		if (ignoreInstance) {
@@ -91,13 +92,16 @@ export class FileWatcher implements IFileWatcher {
 		} else {
 			try {
 				this.batchSegmentThreshold = vscode.workspace
-					.getConfiguration(Package.name)
+					.getConfiguration(Package.configPrefix)
 					.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
 			} catch {
 				// In test environment, vscode.workspace might not be available
 				this.batchSegmentThreshold = BATCH_SEGMENT_THRESHOLD
 			}
 		}
+
+		// Set file processing concurrency
+		this.FILE_PROCESSING_CONCURRENCY_LIMIT = fileProcessingConcurrency ?? 10
 	}
 
 	/**

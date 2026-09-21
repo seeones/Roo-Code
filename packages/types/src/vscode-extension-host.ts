@@ -279,6 +279,7 @@ export type ExtensionState = Pick<
 	| "includeTaskHistoryInEnhance"
 	| "reasoningBlockCollapsed"
 	| "enterBehavior"
+	| "chatInputEffect"
 	| "includeCurrentTime"
 	| "includeCurrentCost"
 	| "maxGitStatusFiles"
@@ -604,6 +605,7 @@ export interface WebviewMessage {
 		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
+		codebaseIndexEmbeddingConcurrency?: number
 		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
 
 		// Secret settings
@@ -667,6 +669,16 @@ export type WebViewMessagePayload =
 	| UpdateTodoListPayload
 	| EditQueuedMessagePayload
 
+export type BatchStage = "idle" | "embedding" | "rate_limited" | "upserting"
+
+export interface BatchSlotStatus {
+	slotId: number
+	stage: BatchStage
+	blockCount: number
+	retryCount: number
+	rateLimitResetTime?: number
+}
+
 export interface IndexingStatus {
 	systemStatus: string
 	message?: string
@@ -676,6 +688,15 @@ export interface IndexingStatus {
 	workspacePath?: string
 	workspaceEnabled?: boolean
 	autoEnableDefault?: boolean
+	currentFile?: string
+	pendingBatches?: number
+	activeBatches?: number
+	queuedBatches?: number
+	batchSlots?: BatchSlotStatus[]
+	batchConcurrency?: number
+	isRateLimited?: boolean
+	rateLimitResetTime?: number
+	rateLimitRetryCount?: number
 }
 
 export interface IndexingStatusUpdateMessage {

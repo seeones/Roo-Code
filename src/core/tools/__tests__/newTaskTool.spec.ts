@@ -18,6 +18,7 @@ vi.mock("../../../shared/package", () => ({
 		publisher: "RooVeterinaryInc",
 		version: "1.0.0",
 		outputChannel: "Roo-Code",
+		configPrefix: "roo-cline",
 	},
 }))
 
@@ -539,7 +540,7 @@ describe("newTaskTool", () => {
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Delegated to child task"))
 		})
 
-		it("should check VSCode setting with Package.name configuration key", async () => {
+		it("should check VSCode setting with Package.configPrefix configuration key", async () => {
 			const mockGet = vi.fn().mockReturnValue(false)
 			const mockGetConfiguration = vi.fn().mockReturnValue({
 				get: mockGet,
@@ -562,12 +563,12 @@ describe("newTaskTool", () => {
 				pushToolResult: mockPushToolResult,
 			})
 
-			// Verify that VSCode configuration was accessed with Package.name
+			// Verify that VSCode configuration was accessed with Package.configPrefix
 			expect(mockGetConfiguration).toHaveBeenCalledWith("roo-cline")
 			expect(mockGet).toHaveBeenCalledWith("newTaskRequireTodos", false)
 		})
 
-		it("should use current Package.name value (roo-code-nightly) when accessing VSCode configuration", async () => {
+		it("should use Package.configPrefix when accessing VSCode configuration (different build variant)", async () => {
 			// Arrange: capture calls to VSCode configuration and ensure we can assert the namespace
 			const mockGet = vi.fn().mockReturnValue(false)
 			const mockGetConfiguration = vi.fn().mockReturnValue({
@@ -575,9 +576,11 @@ describe("newTaskTool", () => {
 			} as any)
 			vi.mocked(vscode.workspace.getConfiguration).mockImplementation(mockGetConfiguration)
 
-			// Mutate the mocked Package.name dynamically to simulate a different build variant
+			// Mutate Package.configPrefix dynamically to simulate a different build variant
+			// (e.g. nightly build with separate settings namespace)
 			const pkg = await import("../../../shared/package")
-			;(pkg.Package as any).name = "roo-code-nightly"
+			const originalPrefix = pkg.Package.configPrefix
+			;(pkg.Package as any).configPrefix = "roo-code-nightly"
 
 			const block: ToolUse<"new_task"> = {
 				type: "tool_use",
@@ -589,15 +592,19 @@ describe("newTaskTool", () => {
 				partial: false,
 			}
 
-			await newTaskTool.handle(mockCline as any, withNativeArgs(block), {
-				askApproval: mockAskApproval,
-				handleError: mockHandleError,
-				pushToolResult: mockPushToolResult,
-			})
+			try {
+				await newTaskTool.handle(mockCline as any, withNativeArgs(block), {
+					askApproval: mockAskApproval,
+					handleError: mockHandleError,
+					pushToolResult: mockPushToolResult,
+				})
 
-			// Assert: configuration was read using the dynamic nightly namespace
-			expect(mockGetConfiguration).toHaveBeenCalledWith("roo-code-nightly")
-			expect(mockGet).toHaveBeenCalledWith("newTaskRequireTodos", false)
+				// Assert: configuration was read using the dynamic prefix
+				expect(mockGetConfiguration).toHaveBeenCalledWith("roo-code-nightly")
+				expect(mockGet).toHaveBeenCalledWith("newTaskRequireTodos", false)
+			} finally {
+				;(pkg.Package as any).configPrefix = originalPrefix
+			}
 		})
 	})
 
