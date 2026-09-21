@@ -37,13 +37,41 @@ export interface LanguageParser {
 	}
 }
 
-async function loadLanguage(langName: string, sourceDirectory?: string) {
+/**
+ * Serializes Language.load() calls across the whole extension.
+ *
+ * web-tree-sitter's Language.load() is NOT concurrency-safe: concurrent loads
+ * corrupt the Emscripten dynamic-link symbol table, so the external scanner
+ * symbols of one language end up being resolved from another language's WASM
+ * module. This causes failures like:
+ *   - "bad export type for 'tree_sitter_<other>_external_scanner_create'"
+ *   - "Incompatible language version 0. Compatibility range 13 through 15"
+ *
+ * The code-index scanner parses files with PARSING_CONCURRENCY = 10, and the
+ * first files of different extensions (e.g. .ts/.py/.rs) each trigger their
+ * own Language.load() concurrently, so this race is hit on the first scan of
+ * a mixed-language project. Serializing the loads fixes it.
+ */
+let languageLoadChain: Promise<unknown> = Promise.resolve()
+
+function enqueueLanguageLoad<T>(task: () => Promise<T>): Promise<T> {
+	const result = languageLoadChain.then(task, task)
+	// Keep the chain alive even if this load fails, so a failure does not
+	// permanently block subsequent loads.
+	languageLoadChain = result.then(
+		() => undefined,
+		() => undefined,
+	)
+	return result
+}
+
+async function loadLanguage(langName: string, sourceDirectory?: string): Promise<LanguageT> {
 	const baseDir = sourceDirectory || __dirname
 	const wasmPath = path.join(baseDir, `tree-sitter-${langName}.wasm`)
 
 	try {
 		const { Language } = require("web-tree-sitter")
-		return await Language.load(wasmPath)
+		return await enqueueLanguageLoad(() => Language.load(wasmPath) as Promise<LanguageT>)
 	} catch (error) {
 		console.error(`Error loading language: ${wasmPath}: ${error instanceof Error ? error.message : error}`)
 		throw error
@@ -51,10 +79,11 @@ async function loadLanguage(langName: string, sourceDirectory?: string) {
 }
 
 let isParserInitialized = false
+let parserInitPromise: Promise<void> | null = null
 
 /*
-Using node bindings for tree-sitter is problematic in vscode extensions 
-because of incompatibility with electron. Going the .wasm route has the 
+Using node bindings for tree-sitter is problematic in vscode extensions
+because of incompatibility with electron. Going the .wasm route has the
 advantage of not having to build for multiple architectures.
 
 We use web-tree-sitter and tree-sitter-wasms which provides auto-updating
@@ -79,9 +108,18 @@ export async function loadRequiredLanguageParsers(filesToParse: string[], source
 	const { Parser, Query } = require("web-tree-sitter")
 
 	if (!isParserInitialized) {
+		// Deduplicate concurrent Parser.init() calls: the flag is only set
+		// after the await completes, so without this guard N concurrent first
+		// calls would each re-initialize the shared WASM runtime, replacing the
+		// global module (and invalidating previously loaded language pointers).
+		if (!parserInitPromise) {
+			parserInitPromise = (async () => {
+				await Parser.init()
+				isParserInitialized = true
+			})()
+		}
 		try {
-			await Parser.init()
-			isParserInitialized = true
+			await parserInitPromise
 		} catch (error) {
 			console.error(`Error initializing parser: ${error instanceof Error ? error.message : error}`)
 			throw error
