@@ -32,7 +32,6 @@ import { openAiCodexOAuthManager } from "./integrations/openai-codex/oauth"
 import { McpServerManager } from "./services/mcp/McpServerManager"
 import { CodeIndexManager } from "./services/code-index/manager"
 import { migrateSettings } from "./utils/migrateSettings"
-import { migrateFromLegacyExtension } from "./utils/migrateFromOldExtension"
 import { autoImportSettings } from "./utils/autoImportSettings"
 import { API } from "./extension/api"
 
@@ -122,12 +121,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Set extension path for custom tool registry to find bundled esbuild
 	customToolRegistry.setExtensionPath(context.extensionPath)
 
-	// Migrate old settings to new file formats (within this extension)
+	// Migrate old settings to new
 	await migrateSettings(context, outputChannel)
-
-	// Migrate data from the legacy Roo Code extension (RooVeterinaryInc.roo-cline)
-	// This handles the fork/rebrand scenario
-	await migrateFromLegacyExtension(context, outputChannel)
 
 	// Initialize i18n for internationalization support.
 	initializeI18n(context.globalState.get("language") ?? formatLanguage(vscode.env.language))
