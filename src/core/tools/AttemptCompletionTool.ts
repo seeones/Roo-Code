@@ -49,7 +49,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 		}
 
 		const preventCompletionWithOpenTodos = vscode.workspace
-			.getConfiguration(Package.name)
+			.getConfiguration(Package.configPrefix)
 			.get<boolean>("preventCompletionWithOpenTodos", false)
 
 		const hasIncompleteTodos = task.todoList && task.todoList.some((todo) => todo.status !== "completed")

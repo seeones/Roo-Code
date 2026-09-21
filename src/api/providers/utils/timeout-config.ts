@@ -9,7 +9,7 @@ import { Package } from "../../../shared/package"
  */
 export function getApiRequestTimeout(): number | undefined {
 	// Get timeout with validation to ensure it's a valid non-negative number
-	const configTimeout = vscode.workspace.getConfiguration(Package.name).get<number>("apiRequestTimeout", 600)
+	const configTimeout = vscode.workspace.getConfiguration(Package.configPrefix).get<number>("apiRequestTimeout", 600)
 
 	// Validate that it's actually a number and not NaN
 	if (typeof configTimeout !== "number" || isNaN(configTimeout)) {

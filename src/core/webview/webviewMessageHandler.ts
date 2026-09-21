@@ -651,7 +651,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 							: []
 
 						await vscode.workspace
-							.getConfiguration(Package.name)
+							.getConfiguration(Package.configPrefix)
 							.update("allowedCommands", newValue, vscode.ConfigurationTarget.Global)
 					} else if (key === "deniedCommands") {
 						const commands = value ?? []
@@ -661,7 +661,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 							: []
 
 						await vscode.workspace
-							.getConfiguration(Package.name)
+							.getConfiguration(Package.configPrefix)
 							.update("deniedCommands", newValue, vscode.ConfigurationTarget.Global)
 					} else if (key === "ttsEnabled") {
 						newValue = value ?? true
@@ -1204,7 +1204,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			// Also update workspace settings.
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("allowedCommands", validCommands, vscode.ConfigurationTarget.Global)
 
 			break
@@ -1220,7 +1220,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			// Also update workspace settings.
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("deniedCommands", validCommands, vscode.ConfigurationTarget.Global)
 
 			break
@@ -2130,7 +2130,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			break
 		case "debugSetting": {
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("debug", message.bool ?? false, vscode.ConfigurationTarget.Global)
 			await provider.postStateToWebview()
 			break

@@ -116,8 +116,8 @@ export class ClineProvider
 	// Used in package.json as the view's id. This value cannot be changed due
 	// to how VSCode caches views based on their id, and updating the id would
 	// break existing instances of the extension.
-	public static readonly sideBarId = `${Package.name}.SidebarProvider`
-	public static readonly tabPanelId = `${Package.name}.TabPanelProvider`
+	public static readonly sideBarId = `${Package.configPrefix}.SidebarProvider`
+	public static readonly tabPanelId = `${Package.configPrefix}.TabPanelProvider`
 	private static activeInstances: Set<ClineProvider> = new Set()
 	private disposables: vscode.Disposable[] = []
 	private webviewDisposables: vscode.Disposable[] = []
@@ -599,7 +599,7 @@ export class ClineProvider
 
 		// If no visible provider, try to show the sidebar view
 		if (!visibleProvider) {
-			await vscode.commands.executeCommand(`${Package.name}.SidebarProvider.focus`)
+			await vscode.commands.executeCommand(`${Package.configPrefix}.SidebarProvider.focus`)
 			// Wait briefly for the view to become visible
 			await delay(100)
 			visibleProvider = ClineProvider.getVisibleInstance()
@@ -1902,7 +1902,7 @@ export class ClineProvider
 				: []
 
 			// Get workspace configuration commands
-			const workspaceCommands = vscode.workspace.getConfiguration(Package.name).get<string[]>(configKey) || []
+			const workspaceCommands = vscode.workspace.getConfiguration(Package.configPrefix).get<string[]>(configKey) || []
 
 			// Validate and sanitize workspace commands
 			const validWorkspaceCommands = Array.isArray(workspaceCommands)
@@ -2116,7 +2116,7 @@ export class ClineProvider
 					return false
 				}
 			})(),
-			debug: vscode.workspace.getConfiguration(Package.name).get<boolean>("debug", false),
+			debug: vscode.workspace.getConfiguration(Package.configPrefix).get<boolean>("debug", false),
 		}
 	}
 
@@ -2550,19 +2550,19 @@ export class ClineProvider
 
 			if (configuration.allowedCommands) {
 				await vscode.workspace
-					.getConfiguration(Package.name)
+					.getConfiguration(Package.configPrefix)
 					.update("allowedCommands", configuration.allowedCommands, vscode.ConfigurationTarget.Global)
 			}
 
 			if (configuration.deniedCommands) {
 				await vscode.workspace
-					.getConfiguration(Package.name)
+					.getConfiguration(Package.configPrefix)
 					.update("deniedCommands", configuration.deniedCommands, vscode.ConfigurationTarget.Global)
 			}
 
 			if (configuration.commandExecutionTimeout !== undefined) {
 				await vscode.workspace
-					.getConfiguration(Package.name)
+					.getConfiguration(Package.configPrefix)
 					.update(
 						"commandExecutionTimeout",
 						configuration.commandExecutionTimeout,
