@@ -1,8 +1,8 @@
 {
-	"name": "roo-cline",
+	"name": "roo-code-continue",
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
-	"publisher": "RooVeterinaryInc",
+	"publisher": "SeeonesStudio",
 	"version": "3.54.7",
 	"icon": "assets/icons/icon.png",
 	"galleryBanner": {
