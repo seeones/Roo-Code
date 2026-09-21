@@ -17,6 +17,7 @@ import { type IndexingStatus, type EmbedderProvider, CODEBASE_INDEX_DEFAULTS } f
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
+import { BatchSlotList } from "./BatchSlotList"
 import { buildDocLink } from "@src/utils/docLinks"
 import { cn } from "@src/lib/utils"
 import {
@@ -180,27 +181,6 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 		default:
 			return baseSchema
 	}
-}
-
-const RateLimitCountdown: React.FC<{ resetTime: number }> = ({ resetTime }) => {
-	const [remaining, setRemaining] = useState(Math.max(0, resetTime - Date.now()))
-
-	useEffect(() => {
-		setRemaining(Math.max(0, resetTime - Date.now()))
-		const timer = setInterval(() => {
-			const secs = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000))
-			setRemaining(secs * 1000)
-			if (secs <= 0) {
-				clearInterval(timer)
-			}
-		}, 1000)
-		return () => clearInterval(timer)
-	}, [resetTime])
-
-	const seconds = Math.ceil(remaining / 1000)
-	if (seconds <= 0) return null
-
-	return <span className="ml-1">({seconds}s)</span>
 }
 
 export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
@@ -726,56 +706,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 									</div>
 								)}
 
-							{/* Batch Slots */}
+							{/* Batch Slots - always render all slots (fixed layout, idle dimmed) */}
 							{indexingStatus.systemStatus === "Indexing" &&
 								indexingStatus.batchSlots &&
 								indexingStatus.batchSlots.length > 0 && (
-									<div className="mt-2 space-y-1">
-										{indexingStatus.batchSlots.map((slot) => {
-											if (slot.stage === "idle") return null
-											const isRateLimited = slot.stage === "rate_limited"
-											const stageLabel = t(`settings:codeIndex.batchStage.${slot.stage}`)
-											const stageIcon =
-												slot.stage === "embedding"
-													? "codicon-globe"
-													: slot.stage === "upserting"
-														? "codicon-database"
-														: slot.stage === "rate_limited"
-															? "codicon-warning"
-															: "codicon-clock"
-
-											return (
-												<div
-													key={slot.slotId}
-													className={cn(
-														"text-xs flex items-center gap-1 px-2 py-1 rounded",
-														isRateLimited
-															? "bg-yellow-500/10 text-yellow-500"
-															: "text-vscode-descriptionForeground",
-													)}>
-													<span className={cn("codicon", stageIcon)} />
-													<span className="font-medium">
-														{t("settings:codeIndex.batchSlotLabel", { id: slot.slotId })}
-													</span>
-													<span>:</span>
-													<span>{stageLabel}</span>
-													<span className="text-vscode-descriptionForeground/70">
-														({slot.blockCount} {t("settings:codeIndex.blocksUnit")})
-													</span>
-													{isRateLimited && slot.rateLimitResetTime && (
-														<RateLimitCountdown resetTime={slot.rateLimitResetTime} />
-													)}
-													{slot.retryCount > 1 && !isRateLimited && (
-														<span className="text-vscode-descriptionForeground/70">
-															{t("settings:codeIndex.retryCount", {
-																count: slot.retryCount,
-															})}
-														</span>
-													)}
-												</div>
-											)
-										})}
-									</div>
+									<BatchSlotList slots={indexingStatus.batchSlots} />
 								)}
 
 							{indexingStatus.isRateLimited &&
