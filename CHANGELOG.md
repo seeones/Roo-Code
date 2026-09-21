@@ -1,5 +1,14 @@
 # Roo Code Changelog
 
+## 3.54.8
+
+### Patch Changes
+
+- Fix: Locate the ripgrep binary shipped by newer VS Code builds under `@vscode/ripgrep-universal` (e.g. `node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/<platform>-<arch>/`), so workspace file listing no longer fails with "Could not find ripgrep binary" and tasks no longer hang silently when sending a message.
+- Fork rebrand: rename extension to Roo Code Continue (publisher SeeonesStudio, repository seeones/Roo-Code).
+- Fix: tree-sitter language parser race condition when loading multiple languages concurrently (Language.load serialized with queue + Parser.init deduplication).
+- Fix: code index batch slots popover layout jumping (fixed slot rendering, idle slots always visible).
+
 ## 3.54.0
 
 ### Minor Changes
