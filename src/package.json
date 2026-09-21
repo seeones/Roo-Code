@@ -14,13 +14,13 @@
 		"node": "20.19.2"
 	},
 	"author": {
-		"name": "Roo Code"
+		"name": "Seeones"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/RooCodeInc/Roo-Code"
+		"url": "https://github.com/seeones/Roo-Code"
 	},
-	"homepage": "https://roocodeinc.github.io/Roo-Code/",
+	"homepage": "https://github.com/seeones/Roo-Code#readme",
 	"categories": [
 		"AI",
 		"Chat",
