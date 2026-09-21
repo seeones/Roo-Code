@@ -9,6 +9,40 @@
  */
 
 import { enhanceErrorWithSourceMaps } from "./sourceMapUtils"
+import { vscode } from "./vscode"
+
+/**
+ * Report a webview runtime error to the extension host for observability.
+ *
+ * The extension host logs it to the output channel. This is the foundation of
+ * grey-screen diagnosis: without it, any webview crash is invisible to the
+ * extension side and cannot be verified against candidate fixes.
+ *
+ * Safe to call from anywhere; never throws (reporting must not cause a
+ * recursive failure).
+ */
+export function reportWebviewError(
+	error: unknown,
+	source: "error" | "unhandledrejection" | "errorboundary",
+	componentStack?: string,
+): void {
+	try {
+		const message = error instanceof Error ? error.message : String(error)
+		const stack = error instanceof Error ? error.stack : undefined
+		vscode.postMessage({
+			type: "webviewError",
+			webviewError: {
+				message,
+				stack,
+				componentStack,
+				source,
+				url: typeof window !== "undefined" ? window.location.href : undefined,
+			},
+		})
+	} catch {
+		// Never let observability itself break the app.
+	}
+}
 
 /**
  * Initialize source map support for production builds
@@ -23,6 +57,10 @@ export function initializeSourceMaps(): void {
 
 	// Set up global error handler
 	window.addEventListener("error", async (event) => {
+		// Report the raw error to the extension host first, so a crash is never
+		// lost even if source-map enhancement fails below.
+		reportWebviewError(event.error ?? event.message, "error")
+
 		if (event.error && event.error instanceof Error) {
 			try {
 				// Apply source maps to the error
@@ -40,6 +78,8 @@ export function initializeSourceMaps(): void {
 
 	// Set up unhandled promise rejection handler
 	window.addEventListener("unhandledrejection", async (event) => {
+		reportWebviewError(event.reason ?? "Unhandled promise rejection", "unhandledrejection")
+
 		if (event.reason && event.reason instanceof Error) {
 			try {
 				// Apply source maps to the error
