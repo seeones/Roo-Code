@@ -1,6 +1,7 @@
 import React, { Component } from "react"
 import { withTranslation, WithTranslation } from "react-i18next"
 import { enhanceErrorWithSourceMaps } from "@src/utils/sourceMapUtils"
+import { reportWebviewError } from "@src/utils/sourceMapInitializer"
 
 type ErrorProps = {
 	children: React.ReactNode
@@ -35,6 +36,10 @@ class ErrorBoundary extends Component<ErrorProps, ErrorState> {
 
 	async componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
 		const componentStack = errorInfo.componentStack || ""
+
+		// Report the crash to the extension host for observability (grey-screen diagnosis).
+		reportWebviewError(error, "errorboundary", componentStack)
+
 		const enhancedError = await enhanceErrorWithSourceMaps(error, componentStack)
 
 		this.setState({

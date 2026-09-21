@@ -92,9 +92,19 @@ export interface ExtensionMessage {
 		| "folderSelected"
 		| "skills"
 		| "fileContent"
+		| "webviewError"
+		| "ping"
 	text?: string
 	/** For fileContent: { path, content, error? } */
 	fileContent?: { path: string; content: string | null; error?: string }
+	/** Webview runtime error reported by the webview for observability (grey screen diagnosis). */
+	webviewError?: {
+		message: string
+		stack?: string
+		componentStack?: string
+		source: "error" | "unhandledrejection" | "errorboundary"
+		url?: string
+	}
 	payload?: any // eslint-disable-line @typescript-eslint/no-explicit-any
 	checkpointWarning?: {
 		type: "WAIT_TIMEOUT" | "INIT_TIMEOUT"
@@ -522,7 +532,18 @@ export interface WebviewMessage {
 		| "moveSkill"
 		| "updateSkillModes"
 		| "openSkillFile"
+		// Observability & recovery
+		| "webviewError"
+		| "pong"
 	text?: string
+	/** Webview runtime error payload reported by the webview (for extension-side logging). */
+	webviewError?: {
+		message: string
+		stack?: string
+		componentStack?: string
+		source: "error" | "unhandledrejection" | "errorboundary"
+		url?: string
+	}
 	taskId?: string
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat"
