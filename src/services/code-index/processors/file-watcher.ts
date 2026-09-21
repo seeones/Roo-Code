@@ -92,7 +92,7 @@ export class FileWatcher implements IFileWatcher {
 		} else {
 			try {
 				this.batchSegmentThreshold = vscode.workspace
-					.getConfiguration(Package.name)
+					.getConfiguration(Package.configPrefix)
 					.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
 			} catch {
 				// In test environment, vscode.workspace might not be available
