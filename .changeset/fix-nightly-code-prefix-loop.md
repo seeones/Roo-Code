@@ -1,5 +1,5 @@
 ---
-"roo-code-continue": patch
+"roo-code-2": patch
 ---
 
 Fix the Nightly build webview reload loop caused by a mismatched id prefix.
