@@ -15,7 +15,7 @@
 		"test": "vitest run",
 		"test:integration": "tsx scripts/integration/run.ts",
 		"build": "tsup",
-		"build:extension": "pnpm --filter roo-code-continue bundle",
+		"build:extension": "pnpm --filter roo-code-2 bundle",
 		"dev": "tsx src/index.ts",
 		"dev:local": "tsx src/index.ts",
 		"clean": "rimraf dist .turbo"

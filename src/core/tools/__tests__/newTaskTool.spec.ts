@@ -580,7 +580,7 @@ describe("newTaskTool", () => {
 			// (e.g. nightly build with separate settings namespace)
 			const pkg = await import("../../../shared/package")
 			const originalPrefix = pkg.Package.configPrefix
-			;(pkg.Package as any).configPrefix = "roo-code-continue-nightly"
+			;(pkg.Package as any).configPrefix = "roo-code-nightly"
 
 			const block: ToolUse<"new_task"> = {
 				type: "tool_use",
@@ -600,7 +600,7 @@ describe("newTaskTool", () => {
 				})
 
 				// Assert: configuration was read using the dynamic prefix
-				expect(mockGetConfiguration).toHaveBeenCalledWith("roo-code-continue-nightly")
+				expect(mockGetConfiguration).toHaveBeenCalledWith("roo-code-nightly")
 				expect(mockGet).toHaveBeenCalledWith("newTaskRequireTodos", false)
 			} finally {
 				;(pkg.Package as any).configPrefix = originalPrefix
