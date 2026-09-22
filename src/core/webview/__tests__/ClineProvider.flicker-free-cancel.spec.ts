@@ -59,6 +59,14 @@ vi.mock("../../../services/mcp/McpServerManager", () => ({
 vi.mock("../../../integrations/workspace/WorkspaceTracker")
 vi.mock("../../config/ProviderSettingsManager")
 vi.mock("../../config/CustomModesManager")
+vi.mock("../../../services/skills/SkillsManager", () => ({
+	SkillsManager: vi.fn().mockImplementation(function () {
+		return {
+			initialize: vi.fn().mockResolvedValue(undefined),
+			dispose: vi.fn().mockResolvedValue(undefined),
+		}
+	}),
+}))
 vi.mock("../../../utils/path", () => ({
 	getWorkspacePath: vi.fn().mockReturnValue("/test/workspace"),
 }))
