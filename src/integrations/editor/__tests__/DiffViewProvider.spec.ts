@@ -29,7 +29,9 @@ vi.mock("path", () => ({
 vi.mock("vscode", () => ({
 	workspace: {
 		applyEdit: vi.fn(),
-		onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidOpenTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 		openTextDocument: vi.fn().mockResolvedValue({
 			isDirty: false,
 			save: vi.fn().mockResolvedValue(undefined),
@@ -42,7 +44,9 @@ vi.mock("vscode", () => ({
 	window: {
 		createTextEditorDecorationType: vi.fn(),
 		showTextDocument: vi.fn(),
-		onDidChangeVisibleTextEditors: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidChangeVisibleTextEditors: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 		tabGroups: {
 			all: [],
 			close: vi.fn(),
@@ -61,10 +65,12 @@ vi.mock("vscode", () => ({
 		Information: 2,
 		Hint: 3,
 	},
-	WorkspaceEdit: vi.fn().mockImplementation(() => ({
-		replace: vi.fn(),
-		delete: vi.fn(),
-	})),
+	WorkspaceEdit: vi.fn().mockImplementation(function () {
+		return {
+			replace: vi.fn(),
+			delete: vi.fn(),
+		}
+	}),
 	ViewColumn: {
 		Active: 1,
 		Beside: 2,
@@ -87,18 +93,24 @@ vi.mock("vscode", () => ({
 	TabInputTextDiff: class TabInputTextDiff {},
 	Uri: {
 		file: vi.fn((path) => ({ fsPath: path })),
-		parse: vi.fn((uri) => ({ with: vi.fn(() => ({})) })),
+		parse: vi.fn((uri) => ({
+			with: vi.fn(function () {
+				return {}
+			}),
+		})),
 	},
 }))
 
 // Mock DecorationController
 vi.mock("../DecorationController", () => ({
-	DecorationController: vi.fn().mockImplementation(() => ({
-		setActiveLine: vi.fn(),
-		updateOverlayAfterLine: vi.fn(),
-		addLines: vi.fn(),
-		clear: vi.fn(),
-	})),
+	DecorationController: vi.fn().mockImplementation(function () {
+		return {
+			setActiveLine: vi.fn(),
+			updateOverlayAfterLine: vi.fn(),
+			addLines: vi.fn(),
+			clear: vi.fn(),
+		}
+	}),
 }))
 
 describe("DiffViewProvider", () => {
@@ -113,7 +125,9 @@ describe("DiffViewProvider", () => {
 			replace: vi.fn(),
 			delete: vi.fn(),
 		}
-		vi.mocked(vscode.WorkspaceEdit).mockImplementation(() => mockWorkspaceEdit as any)
+		vi.mocked(vscode.WorkspaceEdit).mockImplementation(function () {
+			return mockWorkspaceEdit as any
+		})
 
 		// Create a mock Task instance
 		mockTask = {

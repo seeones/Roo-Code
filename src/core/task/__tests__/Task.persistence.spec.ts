@@ -78,17 +78,19 @@ vi.mock("../../task-persistence", () => ({
 	readApiMessages: mockReadApiMessages,
 	readTaskMessages: mockReadTaskMessages,
 	taskMetadata: mockTaskMetadata,
-	TaskHistoryStore: vi.fn().mockImplementation(() => ({
-		initialize: vi.fn().mockResolvedValue(undefined),
-		dispose: vi.fn(),
-		get: vi.fn(),
-		getAll: vi.fn().mockReturnValue([]),
-		upsert: vi.fn().mockResolvedValue([]),
-		delete: vi.fn().mockResolvedValue(undefined),
-		deleteMany: vi.fn().mockResolvedValue(undefined),
-		reconcile: vi.fn().mockResolvedValue(undefined),
-		initialized: Promise.resolve(),
-	})),
+	TaskHistoryStore: vi.fn().mockImplementation(function () {
+		return {
+			initialize: vi.fn().mockResolvedValue(undefined),
+			dispose: vi.fn(),
+			get: vi.fn(),
+			getAll: vi.fn().mockReturnValue([]),
+			upsert: vi.fn().mockResolvedValue([]),
+			delete: vi.fn().mockResolvedValue(undefined),
+			deleteMany: vi.fn().mockResolvedValue(undefined),
+			reconcile: vi.fn().mockResolvedValue(undefined),
+			initialized: Promise.resolve(),
+		}
+	}),
 }))
 
 vi.mock("vscode", () => {
@@ -111,7 +113,9 @@ vi.mock("vscode", () => {
 			tabGroups: {
 				all: [mockTabGroup],
 				close: vi.fn(),
-				onDidChangeTabs: vi.fn(() => ({ dispose: vi.fn() })),
+				onDidChangeTabs: vi.fn(function () {
+					return { dispose: vi.fn() }
+				}),
 			},
 			showErrorMessage: vi.fn(),
 		},
@@ -123,23 +127,29 @@ vi.mock("vscode", () => {
 					index: 0,
 				},
 			],
-			createFileSystemWatcher: vi.fn(() => ({
-				onDidCreate: vi.fn(() => mockDisposable),
-				onDidDelete: vi.fn(() => mockDisposable),
-				onDidChange: vi.fn(() => mockDisposable),
-				dispose: vi.fn(),
-			})),
+			createFileSystemWatcher: vi.fn(function () {
+				return {
+					onDidCreate: vi.fn(() => mockDisposable),
+					onDidDelete: vi.fn(() => mockDisposable),
+					onDidChange: vi.fn(() => mockDisposable),
+					dispose: vi.fn(),
+				}
+			}),
 			fs: {
 				stat: vi.fn().mockResolvedValue({ type: 1 }),
 			},
 			onDidSaveTextDocument: vi.fn(() => mockDisposable),
-			getConfiguration: vi.fn(() => ({ get: (_key: string, defaultValue: unknown) => defaultValue })),
+			getConfiguration: vi.fn(function () {
+				return { get: (_key: string, defaultValue: unknown) => defaultValue }
+			}),
 		},
 		env: {
 			uriScheme: "vscode",
 			language: "en",
 		},
-		EventEmitter: vi.fn().mockImplementation(() => mockEventEmitter),
+		EventEmitter: vi.fn().mockImplementation(function () {
+			return mockEventEmitter
+		}),
 		Disposable: {
 			from: vi.fn(),
 		},

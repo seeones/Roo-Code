@@ -6,6 +6,11 @@ describe("useEscapeKey", () => {
 	let mockOnEscape: ReturnType<typeof vi.fn>
 
 	beforeEach(() => {
+		// Restore any spies left on window (e.g. addEventListener/removeEventListener)
+		// from previous tests. vitest 4 reuses an existing mock when vi.spyOn()
+		// targets it, so without a full restore the call counts from one test leak
+		// into the next (RTL auto-cleanup may run after vi.clearAllMocks()).
+		vi.restoreAllMocks()
 		mockOnEscape = vi.fn()
 	})
 

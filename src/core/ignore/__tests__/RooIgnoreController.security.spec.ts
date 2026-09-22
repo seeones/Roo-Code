@@ -15,17 +15,21 @@ vi.mock("vscode", () => {
 
 	return {
 		workspace: {
-			createFileSystemWatcher: vi.fn(() => ({
-				onDidCreate: vi.fn(() => mockDisposable),
-				onDidChange: vi.fn(() => mockDisposable),
-				onDidDelete: vi.fn(() => mockDisposable),
-				dispose: vi.fn(),
-			})),
+			createFileSystemWatcher: vi.fn(function () {
+				return {
+					onDidCreate: vi.fn(() => mockDisposable),
+					onDidChange: vi.fn(() => mockDisposable),
+					onDidDelete: vi.fn(() => mockDisposable),
+					dispose: vi.fn(),
+				}
+			}),
 		},
-		RelativePattern: vi.fn().mockImplementation((base, pattern) => ({
-			base,
-			pattern,
-		})),
+		RelativePattern: vi.fn().mockImplementation(function (base, pattern) {
+			return {
+				base,
+				pattern,
+			}
+		}),
 	}
 })
 
@@ -301,12 +305,12 @@ build/
 		 */
 		it("should fail closed (securely) when errors occur", () => {
 			// Mock validateAccess to throw error
-			vi.spyOn(controller, "validateAccess").mockImplementation(() => {
+			vi.spyOn(controller, "validateAccess").mockImplementation(function () {
 				throw new Error("Test error")
 			})
 
 			// Spy on console.error
-			const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+			const consoleSpy = vi.spyOn(console, "error").mockImplementation(function () {})
 
 			// Even with mix of allowed/ignored paths, should return empty array on error
 			const filtered = controller.filterPaths(["src/app.js", "node_modules/package.json"])
