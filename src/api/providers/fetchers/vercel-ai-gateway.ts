@@ -23,6 +23,12 @@ const vercelAiGatewayPricingSchema = z.object({
  * VercelAiGatewayModel
  */
 
+// The /models endpoint serves language models as well as speech/transcription
+// models (e.g. fish-audio/*, openai/whisper-1, openai/tts-*) that have no
+// context_window/max_tokens fields. We keep the schema permissive and rely on
+// the `type !== "language"` filter below to exclude non-chat models instead of
+// letting them fail the whole array validation (which also dropped the valid
+// language models).
 const vercelAiGatewayModelSchema = z.object({
 	id: z.string(),
 	object: z.string(),
@@ -30,8 +36,8 @@ const vercelAiGatewayModelSchema = z.object({
 	owned_by: z.string(),
 	name: z.string(),
 	description: z.string(),
-	context_window: z.number(),
-	max_tokens: z.number(),
+	context_window: z.number().optional(),
+	max_tokens: z.number().optional(),
 	type: z.string(),
 	pricing: vercelAiGatewayPricingSchema,
 })
@@ -102,8 +108,10 @@ export const parseVercelAiGatewayModel = ({ id, model }: { id: string; model: Ve
 		VERCEL_AI_GATEWAY_VISION_ONLY_MODELS.has(id) || VERCEL_AI_GATEWAY_VISION_AND_TOOLS_MODELS.has(id)
 
 	const modelInfo: ModelInfo = {
-		maxTokens: model.max_tokens,
-		contextWindow: model.context_window,
+		// Speech/transcription models omit context_window/max_tokens; fall back
+		// to sensible defaults so the model list still renders.
+		maxTokens: model.max_tokens ?? 8192,
+		contextWindow: model.context_window ?? 200_000,
 		supportsImages,
 		supportsPromptCache,
 		inputPrice: parseApiPrice(model.pricing?.input),

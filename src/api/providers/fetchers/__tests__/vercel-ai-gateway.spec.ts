@@ -112,6 +112,52 @@ describe("Vercel AI Gateway Fetchers", () => {
 			consoleErrorSpy.mockRestore()
 		})
 
+		it("does not fail the whole list when speech/transcription models omit context_window/max_tokens", async () => {
+			const consoleErrorSpy = vitest.spyOn(console, "error").mockImplementation(() => {})
+			// Mirrors the real /models response: fish-audio/s1 is index 107 in
+			// the live API and has no context_window/max_tokens fields.
+			const response = {
+				data: {
+					object: "list",
+					data: [
+						{
+							id: "anthropic/claude-sonnet-4",
+							object: "model",
+							created: 1640995200,
+							owned_by: "anthropic",
+							name: "Claude Sonnet 4",
+							description: "Claude Sonnet 4",
+							context_window: 200000,
+							max_tokens: 64000,
+							type: "language",
+							pricing: { input: "3.00", output: "15.00" },
+						},
+						{
+							id: "fish-audio/s1",
+							object: "model",
+							created: 1755815280,
+							owned_by: "fish-audio",
+							name: "S1",
+							description: "Fish Audio S1 TTS",
+							type: "speech",
+							pricing: { input: "0.000015", speech_input_character_cost: "0.000015" },
+						},
+					],
+				},
+			}
+			mockedAxios.get.mockResolvedValueOnce(response)
+
+			const models = await getVercelAiGatewayModels()
+
+			// No schema error should be logged - the list validates fine.
+			expect(consoleErrorSpy).not.toHaveBeenCalled()
+
+			// The language model is still parsed; the speech model is filtered out.
+			expect(models["anthropic/claude-sonnet-4"]).toBeDefined()
+			expect(models["fish-audio/s1"]).toBeUndefined()
+			consoleErrorSpy.mockRestore()
+		})
+
 		it("continues processing with partially valid schema", async () => {
 			const consoleErrorSpy = vitest.spyOn(console, "error").mockImplementation(() => {})
 			const invalidResponse = {
