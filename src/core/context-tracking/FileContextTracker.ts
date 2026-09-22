@@ -30,6 +30,20 @@ export class FileContextTracker {
 	private recentlyEditedByRoo = new Set<string>()
 	private checkpointPossibleFiles = new Set<string>()
 
+	// Serializes the read-modify-write cycle on the task metadata file so concurrent
+	// edits from multiple tools/watchers never interleave. Without this, concurrent
+	// calls lose updates AND each races safeWriteJson's proper-lockfile, flooding the
+	// log with "Lock file is already being held" and dropping metadata writes.
+	private _metadataLock: Promise<void> = Promise.resolve()
+	private withMetadataLock<T>(fn: () => Promise<T>): Promise<T> {
+		const result = this._metadataLock.then(fn, fn)
+		this._metadataLock = result.then(
+			() => {},
+			() => {},
+		)
+		return result
+	}
+
 	constructor(provider: ClineProvider, taskId: string) {
 		this.providerRef = new WeakRef(provider)
 		this.taskId = taskId
@@ -140,63 +154,67 @@ export class FileContextTracker {
 	// Adds a file to the metadata tracker
 	// This handles the business logic of determining if the file is new, stale, or active.
 	// It also updates the metadata with the latest read/edit dates.
+	// The whole read-modify-write cycle is serialized through withMetadataLock so concurrent
+	// calls never read a stale snapshot or race the underlying file lock in saveTaskMetadata.
 	async addFileToFileContextTracker(taskId: string, filePath: string, source: RecordSource) {
-		try {
-			const metadata = await this.getTaskMetadata(taskId)
-			const now = Date.now()
+		return this.withMetadataLock(async () => {
+			try {
+				const metadata = await this.getTaskMetadata(taskId)
+				const now = Date.now()
 
-			// Mark existing entries for this file as stale
-			metadata.files_in_context.forEach((entry) => {
-				if (entry.path === filePath && entry.record_state === "active") {
-					entry.record_state = "stale"
+				// Mark existing entries for this file as stale
+				metadata.files_in_context.forEach((entry) => {
+					if (entry.path === filePath && entry.record_state === "active") {
+						entry.record_state = "stale"
+					}
+				})
+
+				// Helper to get the latest date for a specific field and file
+				const getLatestDateForField = (path: string, field: keyof FileMetadataEntry): number | null => {
+					const relevantEntries = metadata.files_in_context
+						.filter((entry) => entry.path === path && entry[field])
+						.sort((a, b) => (b[field] as number) - (a[field] as number))
+
+					return relevantEntries.length > 0 ? (relevantEntries[0][field] as number) : null
 				}
-			})
 
-			// Helper to get the latest date for a specific field and file
-			const getLatestDateForField = (path: string, field: keyof FileMetadataEntry): number | null => {
-				const relevantEntries = metadata.files_in_context
-					.filter((entry) => entry.path === path && entry[field])
-					.sort((a, b) => (b[field] as number) - (a[field] as number))
+				let newEntry: FileMetadataEntry = {
+					path: filePath,
+					record_state: "active",
+					record_source: source,
+					roo_read_date: getLatestDateForField(filePath, "roo_read_date"),
+					roo_edit_date: getLatestDateForField(filePath, "roo_edit_date"),
+					user_edit_date: getLatestDateForField(filePath, "user_edit_date"),
+				}
 
-				return relevantEntries.length > 0 ? (relevantEntries[0][field] as number) : null
+				switch (source) {
+					// user_edited: The user has edited the file
+					case "user_edited":
+						newEntry.user_edit_date = now
+						this.recentlyModifiedFiles.add(filePath)
+						break
+
+					// roo_edited: Roo has edited the file
+					case "roo_edited":
+						newEntry.roo_read_date = now
+						newEntry.roo_edit_date = now
+						this.checkpointPossibleFiles.add(filePath)
+						this.markFileAsEditedByRoo(filePath)
+						break
+
+					// read_tool/file_mentioned: Roo has read the file via a tool or file mention
+					case "read_tool":
+					case "file_mentioned":
+						newEntry.roo_read_date = now
+						break
+				}
+
+				metadata.files_in_context.push(newEntry)
+				await this.saveTaskMetadata(taskId, metadata)
+			} catch (error) {
+				console.error("Failed to add file to metadata:", error)
 			}
-
-			let newEntry: FileMetadataEntry = {
-				path: filePath,
-				record_state: "active",
-				record_source: source,
-				roo_read_date: getLatestDateForField(filePath, "roo_read_date"),
-				roo_edit_date: getLatestDateForField(filePath, "roo_edit_date"),
-				user_edit_date: getLatestDateForField(filePath, "user_edit_date"),
-			}
-
-			switch (source) {
-				// user_edited: The user has edited the file
-				case "user_edited":
-					newEntry.user_edit_date = now
-					this.recentlyModifiedFiles.add(filePath)
-					break
-
-				// roo_edited: Roo has edited the file
-				case "roo_edited":
-					newEntry.roo_read_date = now
-					newEntry.roo_edit_date = now
-					this.checkpointPossibleFiles.add(filePath)
-					this.markFileAsEditedByRoo(filePath)
-					break
-
-				// read_tool/file_mentioned: Roo has read the file via a tool or file mention
-				case "read_tool":
-				case "file_mentioned":
-					newEntry.roo_read_date = now
-					break
-			}
-
-			metadata.files_in_context.push(newEntry)
-			await this.saveTaskMetadata(taskId, metadata)
-		} catch (error) {
-			console.error("Failed to add file to metadata:", error)
-		}
+		})
 	}
 
 	// Returns (and then clears) the set of recently modified files

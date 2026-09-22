@@ -468,8 +468,17 @@ export class FileWatcher implements IFileWatcher {
 			// Prepare points for batch processing
 			let pointsToUpsert: PointStruct[] = []
 			if (this.embedder && blocks.length > 0) {
-				const texts = blocks.map((block) => block.content)
-				const { embeddings } = await this.embedder.createEmbeddings(texts)
+				// Split blocks into batches respecting the configured embedding batch size
+				// so a single file never sends more items than the embedder allows per request
+				// (e.g. SCNet gateway rejects batches larger than 20/25 items with a 400 error)
+				const batchSize = Math.max(1, this.batchSegmentThreshold)
+				const embeddings: number[][] = []
+				for (let i = 0; i < blocks.length; i += batchSize) {
+					const batchBlocks = blocks.slice(i, i + batchSize)
+					const batchTexts = batchBlocks.map((block) => block.content)
+					const { embeddings: batchEmbeddings } = await this.embedder.createEmbeddings(batchTexts)
+					embeddings.push(...batchEmbeddings)
+				}
 
 				pointsToUpsert = blocks.map((block, index) => {
 					const normalizedAbsolutePath = generateNormalizedAbsolutePath(block.file_path, this.workspacePath)

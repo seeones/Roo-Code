@@ -3,6 +3,7 @@
 import * as vscode from "vscode"
 
 import { FileWatcher } from "../file-watcher"
+import { codeParser } from "../parser"
 
 // Mock dependencies
 vi.mock("../../cache-manager")
@@ -271,6 +272,109 @@ describe("FileWatcher", () => {
 			expect(processedFiles).not.toContain("src/.hidden/components/Button.tsx")
 			expect(processedFiles).not.toContain(".hidden/src/components/Button.tsx")
 			expect(processedFiles).not.toContain("src/components/.hidden/Button.tsx")
+		})
+	})
+
+	describe("embedding batching", () => {
+		it("should split a single file's blocks into batches matching the configured embedding batch size", async () => {
+			// Create a FileWatcher with an explicit small batch size (e.g. user config sets 5)
+			const batchedWatcher = new FileWatcher(
+				"/mock/workspace",
+				mockContext,
+				mockCacheManager,
+				mockEmbedder,
+				mockVectorStore,
+				mockIgnoreInstance,
+				undefined,
+				5,
+			)
+
+			// Mock the parser to return 12 code blocks
+			const mockBlocks = Array.from({ length: 12 }, (_, index) => ({
+				file_path: `/mock/workspace/src/file.ts`,
+				content: `block ${index}`,
+				start_line: index * 10 + 1,
+				end_line: index * 10 + 10,
+			}))
+			vi.mocked(codeParser.parseFile).mockResolvedValue(mockBlocks as any)
+
+			// Embedder returns a vector derived from the text so we can verify
+			// embeddings are correctly spliced back together across batches
+			mockEmbedder.createEmbeddings.mockImplementation(async (texts: string[]) => ({
+				embeddings: texts.map((text) => {
+					const blockIndex = Number(text.split(" ")[1])
+					return [blockIndex, 0.5, 0.25]
+				}),
+			}))
+
+			// Simulate no prior hash so the file is not skipped
+			mockCacheManager.getHash.mockReturnValue(undefined)
+
+			const result = await batchedWatcher.processFile("/mock/workspace/src/file.ts")
+
+			expect(result.status).toBe("processed_for_batching")
+			// 12 blocks / batch size 5 => 3 calls (5, 5, 2)
+			expect(mockEmbedder.createEmbeddings).toHaveBeenCalledTimes(3)
+			expect(mockEmbedder.createEmbeddings).toHaveBeenNthCalledWith(1, [
+				"block 0",
+				"block 1",
+				"block 2",
+				"block 3",
+				"block 4",
+			])
+			expect(mockEmbedder.createEmbeddings).toHaveBeenNthCalledWith(2, [
+				"block 5",
+				"block 6",
+				"block 7",
+				"block 8",
+				"block 9",
+			])
+			expect(mockEmbedder.createEmbeddings).toHaveBeenNthCalledWith(3, ["block 10", "block 11"])
+
+			// All 12 points should be produced with the correct embeddings
+			expect(result.pointsToUpsert).toHaveLength(12)
+			expect(result.pointsToUpsert![0].vector).toEqual([0, 0.5, 0.25])
+			expect(result.pointsToUpsert![11].vector).toEqual([11, 0.5, 0.25])
+		})
+
+		it("should make a single embedding call when blocks fit within the batch size", async () => {
+			const mockBlocks = [
+				{
+					file_path: "/mock/workspace/src/file.ts",
+					content: "block a",
+					start_line: 1,
+					end_line: 10,
+				},
+				{
+					file_path: "/mock/workspace/src/file.ts",
+					content: "block b",
+					start_line: 11,
+					end_line: 20,
+				},
+			]
+			vi.mocked(codeParser.parseFile).mockResolvedValue(mockBlocks as any)
+			mockEmbedder.createEmbeddings.mockImplementation(async (texts: string[]) => ({
+				embeddings: texts.map((_, i) => [i, 0.1]),
+			}))
+			mockCacheManager.getHash.mockReturnValue(undefined)
+
+			const result = await fileWatcher.processFile("/mock/workspace/src/file.ts")
+
+			expect(result.status).toBe("processed_for_batching")
+			expect(mockEmbedder.createEmbeddings).toHaveBeenCalledTimes(1)
+			expect(mockEmbedder.createEmbeddings).toHaveBeenCalledWith(["block a", "block b"])
+			expect(result.pointsToUpsert).toHaveLength(2)
+		})
+
+		it("should not call the embedder when the file has no parseable blocks", async () => {
+			vi.mocked(codeParser.parseFile).mockResolvedValue([])
+			mockCacheManager.getHash.mockReturnValue(undefined)
+
+			const result = await fileWatcher.processFile("/mock/workspace/src/file.ts")
+
+			expect(result.status).toBe("processed_for_batching")
+			expect(mockEmbedder.createEmbeddings).not.toHaveBeenCalled()
+			expect(result.pointsToUpsert).toHaveLength(0)
 		})
 	})
 
