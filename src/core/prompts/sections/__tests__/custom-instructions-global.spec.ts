@@ -237,11 +237,15 @@ describe("custom-instructions global .roo support", () => {
 					} as any,
 				])
 
-			// Mock file reading for mode-specific rules
+			// Mock file reading for mode-specific rules.
+			// Note: AGENTS.md is NOT read here because readAgentRulesFile first calls
+			// fs.lstat, which mockLstat rejects (ENOENT) by default, returning "" early
+			// without ever invoking fs.readFile. Each mockResolvedValueOnce below must
+			// correspond to an actual readFile call, otherwise the leftover queue entry
+			// leaks into the next test.
 			mockReadFile
 				.mockResolvedValueOnce("global mode rule content")
 				.mockResolvedValueOnce("project mode rule content")
-				.mockResolvedValueOnce("") // AGENTS.md file (empty)
 				.mockResolvedValueOnce("") // .roorules legacy file (empty)
 				.mockResolvedValueOnce("") // .clinerules legacy file (empty)
 

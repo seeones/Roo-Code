@@ -166,6 +166,7 @@ export class ClineProvider
 		private readonly outputChannel: vscode.OutputChannel,
 		private readonly renderContext: "sidebar" | "editor" = "sidebar",
 		public readonly contextProxy: ContextProxy,
+		options: { enableTaskHistoryWatcher?: boolean } = {},
 	) {
 		super()
 		this.currentWorkspacePath = getWorkspacePath()
@@ -181,6 +182,9 @@ export class ClineProvider
 			onWrite: async () => {
 				this.scheduleGlobalStateWriteThrough()
 			},
+			// Unit tests disable the fs.watch based cross-instance watcher to avoid
+			// real watchers on the same directory (Windows libuv fs-event assertion).
+			enableWatcher: options.enableTaskHistoryWatcher !== false,
 		})
 		this.initializeTaskHistoryStore().catch((error) => {
 			this.log(`Failed to initialize TaskHistoryStore: ${error}`)

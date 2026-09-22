@@ -690,7 +690,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedOpenAiEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedOpenAiEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			mockEmbedderInstance.validateConfiguration.mockResolvedValue({ valid: true })
 
 			// Act
@@ -712,7 +714,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedOpenAiEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedOpenAiEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			mockEmbedderInstance.validateConfiguration.mockResolvedValue({
 				valid: false,
 				error: "embeddings:validation.authenticationFailed",
@@ -739,7 +743,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedCodeIndexOllamaEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedCodeIndexOllamaEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			mockEmbedderInstance.validateConfiguration.mockResolvedValue({ valid: true })
 
 			// Act
@@ -762,7 +768,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedOpenAICompatibleEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedOpenAICompatibleEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			mockEmbedderInstance.validateConfiguration.mockResolvedValue({ valid: true })
 
 			// Act
@@ -783,7 +791,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedGeminiEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedGeminiEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			mockEmbedderInstance.validateConfiguration.mockResolvedValue({ valid: true })
 
 			// Act
@@ -805,7 +815,9 @@ describe("CodeIndexServiceFactory", () => {
 				},
 			}
 			mockConfigManager.getConfig.mockReturnValue(testConfig as any)
-			MockedOpenAiEmbedder.mockImplementation(() => mockEmbedderInstance)
+			MockedOpenAiEmbedder.mockImplementation(function () {
+				return mockEmbedderInstance
+			})
 			const networkError = new Error("Network error")
 			mockEmbedderInstance.validateConfiguration.mockRejectedValue(networkError)
 

@@ -121,7 +121,9 @@ describe("ClineProvider webview heartbeat monitoring", () => {
 			globalStorageUri: mockContext.globalStorageUri,
 		}
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy as any)
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy as any, {
+			enableTaskHistoryWatcher: false,
+		})
 
 		mockPostMessage = vi.fn()
 		mockWebviewView = {

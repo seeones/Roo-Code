@@ -39,11 +39,21 @@ export interface TaskHistoryStoreOptions {
 	 * globalState during the transition period.
 	 */
 	onWrite?: (items: HistoryItem[]) => Promise<void>
+
+	/**
+	 * Whether to start the fs.watch based cross-instance watcher during
+	 * `initialize()`. Defaults to `true`. Disable in unit tests that exercise
+	 * reconciliation deterministically via explicit `reconcile()` calls, to
+	 * avoid real watchers on the same directory (which can crash the Node
+	 * process on Windows via libuv's fs-event assertion).
+	 */
+	enableWatcher?: boolean
 }
 
 export class TaskHistoryStore {
 	private readonly globalStoragePath: string
 	private readonly onWrite?: (items: HistoryItem[]) => Promise<void>
+	private readonly enableWatcher: boolean
 	private cache: Map<string, HistoryItem> = new Map()
 	private writeLock: Promise<void> = Promise.resolve()
 	private indexWriteTimer: ReturnType<typeof setTimeout> | null = null
@@ -67,6 +77,7 @@ export class TaskHistoryStore {
 	constructor(globalStoragePath: string, options?: TaskHistoryStoreOptions) {
 		this.globalStoragePath = globalStoragePath
 		this.onWrite = options?.onWrite
+		this.enableWatcher = options?.enableWatcher !== false
 		this.initialized = new Promise<void>((resolve) => {
 			this.resolveInitialized = resolve
 		})
@@ -463,7 +474,7 @@ export class TaskHistoryStore {
 	 * Watch the tasks directory for changes from other instances.
 	 */
 	private startWatcher(): void {
-		if (this.disposed) {
+		if (this.disposed || !this.enableWatcher) {
 			return
 		}
 

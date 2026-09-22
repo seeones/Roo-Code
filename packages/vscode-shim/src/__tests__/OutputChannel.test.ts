@@ -2,19 +2,23 @@ import { OutputChannel } from "../classes/OutputChannel.js"
 import { setLogger } from "../utils/logger.js"
 
 describe("OutputChannel", () => {
+	// vitest 4's untyped vi.fn() resolves to Mock<Procedure | Constructable>,
+	// which is no longer assignable to a concrete function signature. Type the
+	// mocks explicitly to match the Logger interface.
+	type LoggerFn = (message: string, context?: string, meta?: unknown) => void
 	let mockLogger: {
-		debug: ReturnType<typeof vi.fn>
-		info: ReturnType<typeof vi.fn>
-		warn: ReturnType<typeof vi.fn>
-		error: ReturnType<typeof vi.fn>
+		debug: ReturnType<typeof vi.fn<LoggerFn>>
+		info: ReturnType<typeof vi.fn<LoggerFn>>
+		warn: ReturnType<typeof vi.fn<LoggerFn>>
+		error: ReturnType<typeof vi.fn<LoggerFn>>
 	}
 
 	beforeEach(() => {
 		mockLogger = {
-			debug: vi.fn(),
-			info: vi.fn(),
-			warn: vi.fn(),
-			error: vi.fn(),
+			debug: vi.fn<LoggerFn>(),
+			info: vi.fn<LoggerFn>(),
+			warn: vi.fn<LoggerFn>(),
+			error: vi.fn<LoggerFn>(),
 		}
 		setLogger(mockLogger)
 	})
