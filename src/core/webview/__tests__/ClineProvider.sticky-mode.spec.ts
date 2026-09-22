@@ -25,20 +25,32 @@ vi.mock("vscode", () => ({
 		showInformationMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 		showErrorMessage: vi.fn(),
-		onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidChangeActiveTextEditor: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 	},
 	workspace: {
 		getConfiguration: vi.fn().mockReturnValue({
 			get: vi.fn().mockReturnValue([]),
 			update: vi.fn(),
 		}),
-		onDidChangeConfiguration: vi.fn().mockImplementation(() => ({
-			dispose: vi.fn(),
-		})),
-		onDidSaveTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidCloseTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidChangeConfiguration: vi.fn().mockImplementation(function () {
+			return {
+				dispose: vi.fn(),
+			}
+		}),
+		onDidSaveTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidChangeTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidOpenTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidCloseTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 	},
 	env: {
 		uriScheme: "vscode",
@@ -57,23 +69,25 @@ vi.mock("vscode", () => ({
 let taskIdCounter = 0
 
 vi.mock("../../task/Task", () => ({
-	Task: vi.fn().mockImplementation((options) => ({
-		taskId: options.taskId || `test-task-id-${++taskIdCounter}`,
-		saveClineMessages: vi.fn(),
-		clineMessages: [],
-		apiConversationHistory: [],
-		overwriteClineMessages: vi.fn(),
-		overwriteApiConversationHistory: vi.fn(),
-		abortTask: vi.fn(),
-		handleWebviewAskResponse: vi.fn(),
-		getTaskNumber: vi.fn().mockReturnValue(0),
-		setTaskNumber: vi.fn(),
-		setParentTask: vi.fn(),
-		setRootTask: vi.fn(),
-		emit: vi.fn(),
-		parentTask: options.parentTask,
-		updateApiConfiguration: vi.fn(),
-	})),
+	Task: vi.fn().mockImplementation(function (options) {
+		return {
+			taskId: options.taskId || `test-task-id-${++taskIdCounter}`,
+			saveClineMessages: vi.fn(),
+			clineMessages: [],
+			apiConversationHistory: [],
+			overwriteClineMessages: vi.fn(),
+			overwriteApiConversationHistory: vi.fn(),
+			abortTask: vi.fn(),
+			handleWebviewAskResponse: vi.fn(),
+			getTaskNumber: vi.fn().mockReturnValue(0),
+			setTaskNumber: vi.fn(),
+			setParentTask: vi.fn(),
+			setRootTask: vi.fn(),
+			emit: vi.fn(),
+			parentTask: options.parentTask,
+			updateApiConfiguration: vi.fn(),
+		}
+	}),
 }))
 
 vi.mock("../../prompts/sections/custom-instructions")
@@ -89,17 +103,21 @@ vi.mock("../../../api", () => ({
 }))
 
 vi.mock("../../../integrations/workspace/WorkspaceTracker", () => ({
-	default: vi.fn().mockImplementation(() => ({
-		initializeFilePaths: vi.fn(),
-		dispose: vi.fn(),
-	})),
+	default: vi.fn().mockImplementation(function () {
+		return {
+			initializeFilePaths: vi.fn(),
+			dispose: vi.fn(),
+		}
+	}),
 }))
 
 vi.mock("../../diff/strategies/multi-search-replace", () => ({
-	MultiSearchReplaceDiffStrategy: vi.fn().mockImplementation(() => ({
-		getName: () => "test-strategy",
-		applyDiff: vi.fn(),
-	})),
+	MultiSearchReplaceDiffStrategy: vi.fn().mockImplementation(function () {
+		return {
+			getName: () => "test-strategy",
+			applyDiff: vi.fn(),
+		}
+	}),
 }))
 
 vi.mock("../../../shared/modes", () => ({
@@ -188,7 +206,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			extensionUri: {} as vscode.Uri,
 			globalState: {
 				get: vi.fn().mockImplementation((key: string) => globalState[key]),
-				update: vi.fn().mockImplementation((key: string, value: string | undefined) => {
+				update: vi.fn().mockImplementation(function (key: string, value: string | undefined) {
 					globalState[key] = value
 					return Promise.resolve()
 				}),
@@ -196,11 +214,11 @@ describe("ClineProvider - Sticky Mode", () => {
 			},
 			secrets: {
 				get: vi.fn().mockImplementation((key: string) => secrets[key]),
-				store: vi.fn().mockImplementation((key: string, value: string | undefined) => {
+				store: vi.fn().mockImplementation(function (key: string, value: string | undefined) {
 					secrets[key] = value
 					return Promise.resolve()
 				}),
-				delete: vi.fn().mockImplementation((key: string) => {
+				delete: vi.fn().mockImplementation(function (key: string) {
 					delete secrets[key]
 					return Promise.resolve()
 				}),
@@ -237,14 +255,18 @@ describe("ClineProvider - Sticky Mode", () => {
 				cspSource: "vscode-webview://test-csp-source",
 			},
 			visible: true,
-			onDidDispose: vi.fn().mockImplementation((callback) => {
+			onDidDispose: vi.fn().mockImplementation(function (callback) {
 				callback()
 				return { dispose: vi.fn() }
 			}),
-			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+			onDidChangeVisibility: vi.fn().mockImplementation(function () {
+				return { dispose: vi.fn() }
+			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		// Wait for the async TaskHistoryStore initialization to complete
 		await new Promise((resolve) => setTimeout(resolve, 10))
@@ -433,7 +455,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 
 			// Set current mode
-			mockContext.globalState.get = vi.fn().mockImplementation((key: string) => {
+			mockContext.globalState.get = vi.fn().mockImplementation(function (key: string) {
 				if (key === "mode") return "code"
 				return undefined
 			})
@@ -505,7 +527,7 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock updateTaskHistory to capture the updated history item
 			let updatedHistoryItem: any
-			vi.spyOn(provider, "updateTaskHistory").mockImplementation((item) => {
+			vi.spyOn(provider, "updateTaskHistory").mockImplementation(function (item) {
 				updatedHistoryItem = item
 				return Promise.resolve([item])
 			})
@@ -548,7 +570,7 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock getGlobalState to return task history
 			const getGlobalStateMock = vi.spyOn(provider as any, "getGlobalState")
-			getGlobalStateMock.mockImplementation((key) => {
+			getGlobalStateMock.mockImplementation(function (key) {
 				if (key === "taskHistory") {
 					return Object.entries(taskModes).map(([id, mode]) => ({
 						id,
@@ -569,7 +591,7 @@ describe("ClineProvider - Sticky Mode", () => {
 
 			// Mock updateTaskHistory to track mode changes
 			const updateTaskHistoryMock = vi.spyOn(provider, "updateTaskHistory")
-			updateTaskHistoryMock.mockImplementation((item) => {
+			updateTaskHistoryMock.mockImplementation(function (item) {
 				// The handleModeSwitch method updates the task history for the current task
 				// We should only update the task that matches the item.id
 				if (item.id && item.mode !== undefined) {
@@ -912,7 +934,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			const mockTask = {
 				taskId: "test-task-id",
 				_taskMode: "code",
-				emit: vi.fn().mockImplementation((event) => {
+				emit: vi.fn().mockImplementation(function (event) {
 					emitCallCount++
 					// Only throw on the second emit call (taskModeSwitched event)
 					// The first call is for TaskFocused in addClineToStack
@@ -948,7 +970,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			vi.spyOn(provider, "updateTaskHistory").mockImplementation(() => Promise.resolve([]))
 
 			// Mock console.error to suppress error output
-			const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+			const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(function () {})
 
 			// Clear previous mock calls to isolate this test
 			vi.mocked(mockContext.globalState.update).mockClear()
@@ -1004,7 +1026,7 @@ describe("ClineProvider - Sticky Mode", () => {
 			vi.spyOn(provider, "updateTaskHistory").mockRejectedValue(new Error("Update failed"))
 
 			// Mock console.error
-			const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+			const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(function () {})
 
 			// The updateTaskHistory failure will cause handleModeSwitch to throw
 			// This is the actual behavior based on the test failure

@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 
 import { API } from "../api"
 import { ClineProvider } from "../../core/webview/ClineProvider"
-import { TaskCommandName } from "@roo-code/types"
+import { TaskCommandName, ExtensionMessage } from "@roo-code/types"
 
 vi.mock("vscode")
 vi.mock("../../core/webview/ClineProvider")
@@ -12,8 +12,8 @@ describe("API - SendMessage Command", () => {
 	let api: API
 	let mockOutputChannel: vscode.OutputChannel
 	let mockProvider: ClineProvider
-	let mockPostMessageToWebview: ReturnType<typeof vi.fn>
-	let mockLog: ReturnType<typeof vi.fn>
+	let mockPostMessageToWebview: ReturnType<typeof vi.fn<(message: ExtensionMessage) => Promise<void>>>
+	let mockLog: ReturnType<typeof vi.fn<(...args: unknown[]) => void>>
 
 	beforeEach(() => {
 		// Setup mocks
@@ -21,7 +21,7 @@ describe("API - SendMessage Command", () => {
 			appendLine: vi.fn(),
 		} as unknown as vscode.OutputChannel
 
-		mockPostMessageToWebview = vi.fn().mockResolvedValue(undefined)
+		mockPostMessageToWebview = vi.fn<(message: ExtensionMessage) => Promise<void>>().mockResolvedValue(undefined)
 
 		mockProvider = {
 			context: {} as vscode.ExtensionContext,
@@ -32,7 +32,7 @@ describe("API - SendMessage Command", () => {
 			viewLaunched: true,
 		} as unknown as ClineProvider
 
-		mockLog = vi.fn()
+		mockLog = vi.fn<(...args: unknown[]) => void>()
 
 		// Create API instance with logging enabled for testing
 		api = new API(mockOutputChannel, mockProvider, undefined, true)

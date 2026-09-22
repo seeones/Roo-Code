@@ -6,7 +6,7 @@ import type { MockedFunction } from "vitest"
 import { fileExistsAtPath } from "../../../utils/fs"
 import { isPathOutsideWorkspace } from "../../../utils/pathUtils"
 import { getReadablePath } from "../../../utils/path"
-import { ToolUse, ToolResponse } from "../../../shared/tools"
+import { ToolUse, ToolResponse, AskApproval, HandleError, PushToolResult } from "../../../shared/tools"
 import { editTool } from "../EditTool"
 
 vi.mock("fs/promises", () => ({
@@ -86,9 +86,9 @@ describe("editTool", () => {
 	const mockedPathIsAbsolute = path.isAbsolute as MockedFunction<typeof path.isAbsolute>
 
 	const mockTask: any = {}
-	let mockAskApproval: ReturnType<typeof vi.fn>
-	let mockHandleError: ReturnType<typeof vi.fn>
-	let mockPushToolResult: ReturnType<typeof vi.fn>
+	let mockAskApproval: ReturnType<typeof vi.fn<AskApproval>>
+	let mockHandleError: ReturnType<typeof vi.fn<HandleError>>
+	let mockPushToolResult: ReturnType<typeof vi.fn<PushToolResult>>
 	let toolResult: ToolResponse | undefined
 
 	beforeEach(() => {
@@ -146,8 +146,8 @@ describe("editTool", () => {
 		mockTask.processQueuedMessages = vi.fn()
 		mockTask.sayAndCreateMissingParamError = vi.fn().mockResolvedValue("Missing param error")
 
-		mockAskApproval = vi.fn().mockResolvedValue(true)
-		mockHandleError = vi.fn().mockResolvedValue(undefined)
+		mockAskApproval = vi.fn<AskApproval>().mockResolvedValue(true)
+		mockHandleError = vi.fn<HandleError>().mockResolvedValue(undefined)
 
 		toolResult = undefined
 	})
@@ -208,7 +208,7 @@ describe("editTool", () => {
 			partial: isPartial,
 		}
 
-		mockPushToolResult = vi.fn((result: ToolResponse) => {
+		mockPushToolResult = vi.fn<PushToolResult>((result: ToolResponse) => {
 			toolResult = result
 		})
 

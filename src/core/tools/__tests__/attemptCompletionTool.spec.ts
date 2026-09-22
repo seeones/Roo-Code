@@ -1,4 +1,5 @@
 import { RooCodeEventName, TodoItem } from "@roo-code/types"
+import { AskApproval, HandleError, PushToolResult } from "../../../shared/tools"
 
 import { AttemptCompletionToolUse } from "../../../shared/tools"
 
@@ -33,19 +34,19 @@ import * as vscode from "vscode"
 
 describe("attemptCompletionTool", () => {
 	let mockTask: Partial<Task>
-	let mockPushToolResult: ReturnType<typeof vi.fn>
-	let mockAskApproval: ReturnType<typeof vi.fn>
-	let mockHandleError: ReturnType<typeof vi.fn>
-	let mockToolDescription: ReturnType<typeof vi.fn>
-	let mockAskFinishSubTaskApproval: ReturnType<typeof vi.fn>
+	let mockPushToolResult: ReturnType<typeof vi.fn<PushToolResult>>
+	let mockAskApproval: ReturnType<typeof vi.fn<AskApproval>>
+	let mockHandleError: ReturnType<typeof vi.fn<HandleError>>
+	let mockToolDescription: ReturnType<typeof vi.fn<() => string>>
+	let mockAskFinishSubTaskApproval: ReturnType<typeof vi.fn<() => Promise<boolean>>>
 	let mockGetConfiguration: ReturnType<typeof vi.fn>
 
 	beforeEach(() => {
-		mockPushToolResult = vi.fn()
-		mockAskApproval = vi.fn()
-		mockHandleError = vi.fn()
-		mockToolDescription = vi.fn()
-		mockAskFinishSubTaskApproval = vi.fn()
+		mockPushToolResult = vi.fn<PushToolResult>()
+		mockAskApproval = vi.fn<AskApproval>()
+		mockHandleError = vi.fn<HandleError>()
+		mockToolDescription = vi.fn<() => string>()
+		mockAskFinishSubTaskApproval = vi.fn<() => Promise<boolean>>()
 		mockGetConfiguration = vi.fn(() => ({
 			get: vi.fn((key: string, defaultValue: any) => {
 				if (key === "preventCompletionWithOpenTodos") {
@@ -56,7 +57,7 @@ describe("attemptCompletionTool", () => {
 		}))
 
 		// Setup vscode mock
-		vi.mocked(vscode.workspace.getConfiguration).mockImplementation(mockGetConfiguration)
+		vi.mocked(vscode.workspace.getConfiguration).mockImplementation(mockGetConfiguration as any)
 
 		mockTask = {
 			consecutiveMistakeCount: 0,

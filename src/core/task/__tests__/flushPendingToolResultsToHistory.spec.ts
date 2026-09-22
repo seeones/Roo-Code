@@ -203,6 +203,7 @@ describe("flushPendingToolResultsToHistory", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		mockApiConfig = {

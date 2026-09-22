@@ -1,4 +1,3 @@
-import * as actualFsPromises from "fs/promises"
 import * as fsSyncActual from "fs"
 import { Writable } from "stream"
 import * as path from "path"
@@ -6,14 +5,30 @@ import * as os from "os"
 
 import { safeWriteJson } from "../safeWriteJson"
 
-const originalFsPromisesRename = actualFsPromises.rename
-const originalFsPromisesUnlink = actualFsPromises.unlink
-const originalFsPromisesWriteFile = actualFsPromises.writeFile
-const _originalFsPromisesAccess = actualFsPromises.access
-const originalFsPromisesMkdir = actualFsPromises.mkdir
+// Capture the REAL fs/promises implementations inside the mock factory.
+// vi.mock is hoisted above imports, so `import * as ... from "fs/promises"`
+// resolves to the MOCKED module whose methods are vi.fn() wrappers. Calling
+// those wrappers from inside a mockImplementation would re-enter the spy and
+// recurse infinitely, because vitest 4 reuses an existing mock when vi.spyOn()
+// targets it - the spy's mockImplementation therefore also applies to these
+// references.
+const realFsPromises = vi.hoisted(() => ({}) as Record<string, any>)
+
+const originalFsPromisesRename = realFsPromises.rename
+const originalFsPromisesUnlink = realFsPromises.unlink
+const originalFsPromisesWriteFile = realFsPromises.writeFile
+const _originalFsPromisesAccess = realFsPromises.access
+const originalFsPromisesMkdir = realFsPromises.mkdir
 
 vi.mock("fs/promises", async () => {
 	const actual = await vi.importActual<typeof import("fs/promises")>("fs/promises")
+	// Keep references to the real implementations so tests can call through to
+	// actual fs operations from inside mock implementations without recursion.
+	realFsPromises.rename = actual.rename
+	realFsPromises.unlink = actual.unlink
+	realFsPromises.writeFile = actual.writeFile
+	realFsPromises.access = actual.access
+	realFsPromises.mkdir = actual.mkdir
 	// Start with all actual implementations.
 	const mockedFs = { ...actual }
 	// Selectively wrap functions with vi.fn() if they are spied on
@@ -317,7 +332,7 @@ describe("safeWriteJson", () => {
 
 	// Test for console error suppression during backup deletion
 	test("should suppress console.error when backup deletion fails", async () => {
-		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {}) // Suppress console.error
+		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(function () {}) // Suppress console.error
 		const initialData = { message: "Initial" }
 		const newData = { message: "New" }
 
@@ -451,7 +466,7 @@ describe("safeWriteJson", () => {
 		await originalFsPromisesWriteFile(currentTestFilePath, JSON.stringify(initialData))
 
 		const renameSpy = vi.spyOn(fs, "rename")
-		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {}) // Suppress console.error
+		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(function () {}) // Suppress console.error
 
 		let renameCallCount = 0
 		renameSpy.mockImplementation(async (oldPath, newPath) => {
