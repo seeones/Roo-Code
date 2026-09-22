@@ -2,7 +2,7 @@
 
 import { useMcpToolTool } from "../UseMcpToolTool"
 import { Task } from "../../task/Task"
-import { ToolUse } from "../../../shared/tools"
+import { ToolUse, AskApproval, HandleError, PushToolResult } from "../../../shared/tools"
 
 // Mock dependencies
 vi.mock("../../prompts/responses", () => ({
@@ -43,17 +43,17 @@ vi.mock("../../../i18n", () => ({
 
 describe("useMcpToolTool", () => {
 	let mockTask: Partial<Task>
-	let mockAskApproval: ReturnType<typeof vi.fn>
-	let mockHandleError: ReturnType<typeof vi.fn>
-	let mockPushToolResult: ReturnType<typeof vi.fn>
-	let mockRemoveClosingTag: ReturnType<typeof vi.fn>
+	let mockAskApproval: ReturnType<typeof vi.fn<AskApproval>>
+	let mockHandleError: ReturnType<typeof vi.fn<HandleError>>
+	let mockPushToolResult: ReturnType<typeof vi.fn<PushToolResult>>
+	let mockRemoveClosingTag: ReturnType<typeof vi.fn<(tag: string, value?: string) => string>>
 	let mockProviderRef: any
 
 	beforeEach(() => {
-		mockAskApproval = vi.fn()
-		mockHandleError = vi.fn()
-		mockPushToolResult = vi.fn()
-		mockRemoveClosingTag = vi.fn((tag: string, value?: string) => value || "")
+		mockAskApproval = vi.fn<AskApproval>()
+		mockHandleError = vi.fn<HandleError>()
+		mockPushToolResult = vi.fn<PushToolResult>()
+		mockRemoveClosingTag = vi.fn<(tag: string, value?: string) => string>((tag, value) => value || "")
 
 		mockProviderRef = {
 			deref: vi.fn().mockReturnValue({
