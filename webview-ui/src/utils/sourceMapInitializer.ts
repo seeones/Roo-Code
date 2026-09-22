@@ -93,56 +93,57 @@ export function initializeSourceMaps(): void {
 		}
 	})
 
-	// Preload source maps for all scripts
+	// Preload source maps for all scripts.
+	// We own the build pipeline (see webview-ui/vite.config.ts and the
+	// sourcemapPlugin), which appends a sourceMappingURL comment to every
+	// generated chunk. Reading that comment is the single source of truth for
+	// the map's real file name, so we do NOT guess candidate names (which
+	// produced spurious 404s in the webview logs).
 	try {
 		const scripts = document.getElementsByTagName("script")
 		for (let i = 0; i < scripts.length; i++) {
 			const script = scripts[i]
-			if (script.src) {
-				// Try multiple source map locations
-				const possibleMapUrls = [
-					`${script.src}.map`,
-					`${script.src}?source-map=true`,
-					script.src.replace(/\.js$/, ".js.map"),
-					script.src.replace(/\.js$/, ".map.json"),
-					script.src.replace(/\.js$/, ".sourcemap"),
-				]
-
-				// Preload all possible source map locations
-				for (const mapUrl of possibleMapUrls) {
-					const link = document.createElement("link")
-					link.rel = "preload"
-					link.as = "fetch"
-					link.href = mapUrl
-					link.crossOrigin = "anonymous"
-					document.head.appendChild(link)
-				}
-
-				// Also check for inline sourceMappingURL comments
-				fetch(script.src)
-					.then((response) => response.text())
-					.then((content) => {
-						const sourceMappingURLMatch = content.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/)
-						if (sourceMappingURLMatch && sourceMappingURLMatch[1]) {
-							const sourceMappingURL = sourceMappingURLMatch[1]
-
-							// If it's not a data: URL, preload it
-							if (!sourceMappingURL.startsWith("data:")) {
-								const scriptUrlObj = new URL(script.src)
-								const baseUrl = scriptUrlObj.href.substring(0, scriptUrlObj.href.lastIndexOf("/") + 1)
-								const fullUrl = new URL(sourceMappingURL, baseUrl).href
-
-								const link = document.createElement("link")
-								link.rel = "preload"
-								link.as = "fetch"
-								link.href = fullUrl
-								link.crossOrigin = "anonymous"
-								document.head.appendChild(link)
-							}
-						}
-					})
-					.catch((e) => console.debug("Error checking for inline sourceMappingURL:", e))
+			if (!script.src) {
+				continue
 			}
+
+			// Resolve the map URL from the inline sourceMappingURL comment.
+			fetch(script.src)
+				.then((response) => response.text())
+				.then((content) => {
+					const sourceMappingURLMatch = content.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/)
+					if (!sourceMappingURLMatch || !sourceMappingURLMatch[1]) {
+						return
+					}
+
+					const sourceMappingURL = sourceMappingURLMatch[1]
+
+					// Inline data: maps need no preload.
+					if (sourceMappingURL.startsWith("data:")) {
+						return
+					}
+
+					const scriptUrlObj = new URL(script.src)
+					const baseUrl = scriptUrlObj.href.substring(0, scriptUrlObj.href.lastIndexOf("/") + 1)
+					const fullUrl = new URL(sourceMappingURL, baseUrl).href
+
+					// Probe first so we only preload maps that actually exist.
+					return fetch(fullUrl)
+						.then((mapResponse) => {
+							if (!mapResponse.ok) {
+								console.debug(`Source map not found (skipping preload): ${fullUrl}`)
+								return
+							}
+							const link = document.createElement("link")
+							link.rel = "preload"
+							link.as = "fetch"
+							link.href = fullUrl
+							link.crossOrigin = "anonymous"
+							document.head.appendChild(link)
+						})
+						.catch((e) => console.debug("Error probing source map:", e))
+				})
+				.catch((e) => console.debug("Error checking for inline sourceMappingURL:", e))
 		}
 	} catch (e) {
 		console.error("Error preloading source maps:", e)
