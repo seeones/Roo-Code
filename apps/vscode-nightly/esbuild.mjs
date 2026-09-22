@@ -36,6 +36,13 @@ async function main() {
 			"process.env.PKG_NAME": '"roo-code-continue-nightly"',
 			"process.env.PKG_VERSION": `"${overrideJson.version}"`,
 			"process.env.PKG_OUTPUT_CHANNEL": '"Roo-Code-Nightly"',
+			// Config/command/view prefix stays "roo-code-nightly" (the upstream nightly
+			// prefix) so existing user settings under roo-code-nightly.* keep working,
+			// exactly like the stable extension keeps "roo-cline" for compatibility.
+			// The extension id (PKG_NAME) is ours, but contributed ids must match what
+			// generatePackageJson() emits via the substitution below, otherwise VSCode
+			// cannot resolve the SidebarProvider and the webview reloads in a loop.
+			"process.env.PKG_CONFIG_PREFIX": '"roo-code-nightly"',
 			...(gitSha ? { "process.env.PKG_SHA": `"${gitSha}"` } : {}),
 		},
 	}
@@ -88,7 +95,9 @@ async function main() {
 					const generatedPackageJson = generatePackageJson({
 						packageJson,
 						overrideJson,
-						substitution: ["roo-cline", "roo-code-continue-nightly"],
+						// Config/command/view prefix maps to the upstream nightly prefix
+						// (roo-code-nightly) so roo-code-nightly.* user settings carry over.
+						substitution: ["roo-cline", "roo-code-nightly"],
 					})
 
 					fs.writeFileSync(path.join(buildDir, "package.json"), JSON.stringify(generatedPackageJson, null, 2))
