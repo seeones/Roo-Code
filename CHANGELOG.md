@@ -1,5 +1,15 @@
 # Roo Code Changelog
 
+## 3.54.11
+
+### Patch Changes
+
+- Fix: code-index incremental updates now batch embeddings by the configured `codeIndex.embeddingBatchSize`, so a single large file no longer floods the embedder with oversized requests (SCNet gateway rejects batches over 20/25 items with 400 errors). Also serializes task-metadata read-modify-write cycles to eliminate concurrent lock contention on `task_metadata.json` (`Lock file is already being held`).
+- Fix nightly publish failing on the VS Code Marketplace.
+- Rename the nightly build display name from "Roo Code Nightly" to "Roo Code Continue Nightly" (in `apps/vscode-nightly/package.nls.nightly.json`). The Marketplace requires display names to be globally unique across all publishers; "Roo Code Nightly" was already taken by another extension, causing `vsce publish` to fail with "This extension display name is taken".
+- Fix Unbound model fetching: the `/models` endpoint now returns a dictionary keyed by model id with camelCase fields (e.g. `maxTokens`, `contextWindow`, `inputTokenPrice`), while the fetcher still expected an array with snake_case fields. This caused "response did not contain an array of models" errors and an empty model list. The fetcher now accepts both dictionary and array shapes, reads both camelCase and snake_case fields, and coerces numeric strings.
+- Fix Vercel AI Gateway model fetching: speech/transcription models (e.g. fish-audio, openai/tts, openai/whisper) omit `context_window`/`max_tokens`, which failed the whole `/models` schema validation and dropped all language models. The schema now treats those fields as optional and the non-language filter handles exclusion.
+
 ## 3.54.10
 
 ### Patch Changes
