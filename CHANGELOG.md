@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.54.9
+
+### Patch Changes
+
+- Fix: webview grey-screen observability & recovery. Webview runtime errors (`window.onerror`, unhandled rejections, ErrorBoundary) are now reported to the extension output channel for grey-screen diagnosis; a ping/pong heartbeat detects unresponsive webviews and offers a "Reload Panel" recovery option.
+
 ## 3.54.8
 
 ### Patch Changes
