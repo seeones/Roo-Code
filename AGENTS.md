@@ -2,18 +2,18 @@
 
 This file provides guidance to agents when working with code in this repository.
 
-## Repository Background: Roo Code → Roo Code Continue
+## Repository Background: Roo Code → Roo Code 2
 
 This repository is a **fork of [Roo Code](https://github.com/RooVetGit/Roo-Code)**, whose original upstream repository has been **archived and is no longer maintained**. In order to keep publishing to the VS Code Marketplace under this fork, the extension was renamed:
 
-- **Extension identity** (`package.json` `name`): `roo-code-continue` (Nightly: `roo-code-continue-nightly`)
-- **Display name** (via `package.nls.*.json` → `extension.displayName`): **"Roo Code Continue"** (Nightly: "Roo Code Continue Nightly")
+- **Extension identity** (`package.json` `name`): `roo-code-2`
+- **Display name** (via `package.nls.*.json` → `extension.displayName`): **"Roo Code 2"**
 
 When making changes, keep the following naming rules in mind:
 
-- **User-facing / Marketplace-facing names** (display name, command titles, activity bar titles, README, i18n strings) should reference the new "Roo Code Continue" branding. Do NOT revert these to "Roo Code".
+- **User-facing / Marketplace-facing names** (display name, command titles, activity bar titles, README, i18n strings) should reference the new "Roo Code 2" branding. Do NOT revert these to "Roo Code".
 - **Internal identifiers that affect settings/import compatibility MUST keep the original `roo-cline` prefix.** This includes: VS Code `configuration` setting keys (e.g. `roo-cline.allowedCommands`, `roo-cline.customStoragePath`, `roo-cline.apiRequestTimeout`), commands (`roo-cline.plusButtonClicked`, ...), view/webview IDs (`roo-cline.SidebarProvider`), submenus, and keybindings. Renaming these would break existing user settings, keybindings, and the ability to import settings from the original Roo Code — so they must stay exactly as-is.
-- The Nightly variant (in `apps/vscode-nightly/`) is generated at build time via `generatePackageJson()` which substitutes `roo-cline → roo-code-continue-nightly` for `contributes` keys only; settings `properties` keep the `roo-cline.` prefix for the same compatibility reason.
+- The Nightly variant (in `apps/vscode-nightly/`) is **no longer published** — the `nightly-publish.yml` workflow has been removed, but the source directory is kept. If it is ever re-enabled, it must stay symmetric with the main version: `generatePackageJson()` substitutes `roo-cline → roo-code-nightly` for `contributes` keys only, the build injects `process.env.PKG_CONFIG_PREFIX = "roo-code-nightly"`, and settings `properties` keep the `roo-cline.` prefix for the same compatibility reason.
 - `src/utils/migrateSettings.ts` handles legacy file-name migration (`cline_custom_modes.json`, `cline_mcp_settings.json`) and default-command cleanup; do not change the migrated file names.
 - The VS Code Marketplace requires a **globally unique display name**. Before introducing a new display name, verify it is not already taken, otherwise `vsce publish` fails with "This extension display name is taken".
 
