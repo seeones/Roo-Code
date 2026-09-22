@@ -273,6 +273,7 @@ describe("Cline", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		// Setup mock API configuration
@@ -1902,7 +1903,9 @@ describe("Queued message processing after condense", () => {
 			dispose: vi.fn(),
 		}
 
-		const provider = new ClineProvider(ctx, output as any, "sidebar", new ContextProxy(ctx)) as any
+		const provider = new ClineProvider(ctx, output as any, "sidebar", new ContextProxy(ctx), {
+			enableTaskHistoryWatcher: false,
+		}) as any
 		provider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.postStateToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.postStateToWebviewWithoutTaskHistory = vi.fn().mockResolvedValue(undefined)
@@ -2040,6 +2043,7 @@ describe("pushToolResultToUserContent", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		mockProvider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)

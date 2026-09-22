@@ -41,7 +41,7 @@ describe("TaskHistoryStore", () => {
 
 	beforeEach(async () => {
 		tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "task-history-test-"))
-		store = new TaskHistoryStore(tmpDir)
+		store = new TaskHistoryStore(tmpDir, { enableWatcher: false })
 	})
 
 	afterEach(async () => {

@@ -427,7 +427,9 @@ describe("ClineProvider", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		defaultTaskOptions = {
 			provider,
@@ -477,6 +479,7 @@ describe("ClineProvider", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockContext),
+			{ enableTaskHistoryWatcher: false },
 		)
 		;(axios.get as any).mockRejectedValueOnce(new Error("Network error"))
 
@@ -1110,7 +1113,9 @@ describe("ClineProvider", () => {
 		} as unknown as vscode.ExtensionContext
 
 		// Create new provider with updated mock context
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 		await provider.resolveWebviewView(mockWebviewView)
 		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
@@ -2052,7 +2057,9 @@ describe("Project MCP Settings", () => {
 			onDidChangeVisibility: vi.fn(),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test.skip("handles openProjectMcpSettings message", async () => {
@@ -2165,7 +2172,9 @@ describe.skip("ContextProxy integration", () => {
 
 		mockOutputChannel = { appendLine: vi.fn() } as unknown as vscode.OutputChannel
 		mockContextProxy = new ContextProxy(mockContext)
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy)
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy, {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test("updateGlobalState uses contextProxy", async () => {
@@ -2262,7 +2271,9 @@ describe("ClineProvider - Router Models", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test("handles requestRouterModels with successful responses", async () => {
@@ -2567,7 +2578,9 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		defaultTaskOptions = {
 			provider,

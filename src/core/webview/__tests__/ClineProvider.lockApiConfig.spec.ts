@@ -289,7 +289,9 @@ describe("ClineProvider - Lock API Config Across Modes", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		// Mock getMcpHub method
 		provider.getMcpHub = vi.fn().mockReturnValue({

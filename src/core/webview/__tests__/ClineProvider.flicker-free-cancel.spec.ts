@@ -120,7 +120,9 @@ describe("ClineProvider flicker-free cancel", () => {
 		}
 
 		// Create provider instance
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy as any)
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy as any, {
+			enableTaskHistoryWatcher: false,
+		})
 
 		// Mock provider methods
 		provider.getState = vi.fn().mockResolvedValue({

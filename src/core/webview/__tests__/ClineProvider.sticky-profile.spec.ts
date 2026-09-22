@@ -269,7 +269,9 @@ describe("ClineProvider - Sticky Provider Profile", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		// Wait for the async TaskHistoryStore initialization to complete
 		await new Promise((resolve) => setTimeout(resolve, 10))

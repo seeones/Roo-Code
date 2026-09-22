@@ -249,6 +249,7 @@ describe("Task persistence", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as ClineProvider & Record<string, any>
 
 		mockApiConfig = {

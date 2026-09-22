@@ -191,6 +191,7 @@ describe("Grace Retry Error Handling", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		mockApiConfig = {

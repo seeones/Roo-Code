@@ -197,7 +197,9 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		// Mock providerSettingsManager
 		;(provider as any).providerSettingsManager = {
