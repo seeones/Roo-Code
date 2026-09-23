@@ -6,7 +6,11 @@ on:
   workflow_dispatch:
 
 env:
-  GIT_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+  # Use the PR's merge_commit_sha (the commit actually on `main` after squash/merge)
+  # instead of head.sha. On a squash merge the head commit becomes an orphan, which
+  # previously caused the release tag to be created off `main`. merge_commit_sha points
+  # at the commit on `main` for both merge and squash strategies, keeping tags on `main`.
+  GIT_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || 'main' }}
 
 jobs:
   publish-extension:
@@ -15,6 +19,7 @@ jobs:
       contents: write # Required for pushing tags.
     if: >
         ( github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true &&
         github.event.pull_request.base.ref == 'main' &&
         contains(github.event.pull_request.title, 'Changeset version bump') ) ||
         github.event_name == 'workflow_dispatch'
@@ -37,7 +42,7 @@ jobs:
           pnpm vsix
 
           # Save VSIX contents to a temporary file to avoid broken pipe issues.
-          unzip -l bin/roo-cline-${current_package_version}.vsix > /tmp/roo-code-vsix-contents.txt
+          unzip -l bin/roo-code-2-${current_package_version}.vsix > /tmp/roo-code-vsix-contents.txt
 
           # Check for required files.
           grep -q "extension/package.json" /tmp/roo-code-vsix-contents.txt || exit 1
@@ -48,7 +53,7 @@ jobs:
           grep -q "extension/assets/codicons/codicon.ttf" /tmp/roo-code-vsix-contents.txt || exit 1
           grep -q "extension/assets/vscode-material-icons/icons/3d.svg" /tmp/roo-code-vsix-contents.txt || exit 1
           grep -q ".env" /tmp/roo-code-vsix-contents.txt || exit 1
-          
+
           # Clean up temporary file.
           rm /tmp/roo-code-vsix-contents.txt
       - name: Create and Push Git Tag
@@ -63,7 +68,7 @@ jobs:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           current_package_version=$(node -p "require('./src/package.json').version")
-          pnpm --filter roo-cline publish:marketplace
+          pnpm --filter roo-code-2 publish:marketplace
           echo "Successfully published version $current_package_version to VS Code Marketplace"
       - name: Create GitHub Release
         env:
@@ -88,5 +93,5 @@ jobs:
             --title "Release v${current_package_version}" \
             --notes "$changelog_content" \
             --target ${{ env.GIT_REF }} \
-            bin/roo-cline-${current_package_version}.vsix
+            bin/roo-code-2-${current_package_version}.vsix
           echo "Successfully created GitHub Release v${current_package_version}"
