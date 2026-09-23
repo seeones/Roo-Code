@@ -37,7 +37,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
 		context: vscode.CodeActionContext,
 	): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
 		try {
-			if (!vscode.workspace.getConfiguration(Package.name).get<boolean>("enableCodeActions", true)) {
+			if (!vscode.workspace.getConfiguration(Package.configPrefix).get<boolean>("enableCodeActions", true)) {
 				return []
 			}
 
