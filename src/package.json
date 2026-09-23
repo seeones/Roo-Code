@@ -1,9 +1,9 @@
 {
-	"name": "roo-cline",
+	"name": "roo-code-2",
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
-	"publisher": "RooVeterinaryInc",
-	"version": "3.54.1",
+	"publisher": "SeeonesStudio",
+	"version": "3.55.0",
 	"icon": "assets/icons/icon.png",
 	"galleryBanner": {
 		"color": "#617A91",
@@ -11,16 +11,16 @@
 	},
 	"engines": {
 		"vscode": "^1.84.0",
-		"node": "20.19.2"
+		"node": "24.18.0"
 	},
 	"author": {
-		"name": "Roo Code"
+		"name": "Seeones"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/RooCodeInc/Roo-Code"
+		"url": "https://github.com/seeones/Roo-Code"
 	},
-	"homepage": "https://roocodeinc.github.io/Roo-Code/",
+	"homepage": "https://github.com/seeones/Roo-Code#readme",
 	"categories": [
 		"AI",
 		"Chat",
@@ -546,7 +546,7 @@
 		"rimraf": "^6.0.1",
 		"tsup": "^8.4.0",
 		"tsx": "^4.19.3",
-		"vitest": "^3.2.3",
+		"vitest": "^4.1.11",
 		"zod-to-ts": "^1.2.0"
 	}
 }

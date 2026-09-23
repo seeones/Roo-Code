@@ -1,5 +1,33 @@
 # Roo Code Changelog
 
+## 3.55.0
+
+### Minor Changes
+
+- Rebrand: the extension is published as **Roo Code Plus** (id `roo-code-2`, publisher SeeonesStudio). Internal `roo-cline.*` configuration keys, commands and view ids are kept unchanged for settings/import compatibility. Introduce `Package.configPrefix` to separate the extension id from the configuration prefix so the stable and nightly variants can share code.
+
+### Features
+
+- Chat: add a model selector to the chat input bar, aligned with the settings page data sources.
+- Chat: new selectable "AI working" input box effect (marquee / breathing).
+- Chat: clean up the user message layout - remove the user/message header labels, constrain user bubbles to 70% width and right-align them, and move the edit/delete buttons below the bubble.
+- Code index: add per-slot batch status display with stage tracking, and keep batch slots visible during indexing to prevent popover jumping.
+- Code index: add embedding concurrency configuration with detailed status feedback and rate-limit visibility, fix the concurrency save bug, and include embedding concurrency in `ClineProvider` state serialization.
+- Code index: surface detailed Qdrant server errors on upsert failure; "stop indexing" now clears queued batch processing; serialize `tree-sitter` `Language.load` to fix a parser init race.
+- Webview: grey-screen observability and recovery - runtime errors (`window.onerror`, unhandled rejections, `ErrorBoundary`) are reported to the extension output channel, and a ping/pong heartbeat detects unresponsive webviews and offers a "Reload Panel" recovery option.
+
+### Fixes
+
+- Fetchers: Unbound `/models` now accepts both dictionary and array shapes (camelCase and snake_case fields, numeric strings).
+- Fetchers: Vercel AI Gateway treats `context_window` / `max_tokens` as optional so speech / transcription models no longer drop the whole language-model list.
+- Locate the ripgrep binary shipped by newer VS Code builds under `@vscode/ripgrep-universal`, so workspace file listing no longer fails with "Could not find ripgrep binary".
+- Serialize `FileContextTracker` writes and task-metadata read-modify-write cycles to remove concurrent lock contention on `task_metadata.json`.
+
+### CI / Tooling
+
+- Upgrade Node from 20 to 24 across `.nvmrc`, `.tool-versions`, `package.json` engines and the setup-node-pnpm action.
+- Upgrade vitest to 4 and migrate the test suite (constructor mocks are no longer constructible from arrow functions; spy reuse and `fs.watch` watcher fixes).
+- Marketplace publish now creates release tags on `main` via `merge_commit_sha` (plus a `merged == true` guard), so release tags always land on `main`.
 ## 3.54.0
 
 ### Minor Changes
@@ -3423,12 +3451,6 @@
 ## [2.1.7]
 
 - Updated extension icon and metadata
-
-## [2.2.0]
-
-- Add support for Model Context Protocol (MCP), enabling Cline to use custom tools like web-search tool or GitHub tool
-- Add MCP server management tab accessible via the server icon in the menu bar
-- Add ability for Cline to dynamically create new MCP servers based on user requests (e.g., "add a tool that gets the latest npm docs")
 
 ## [2.1.6]
 

@@ -76,9 +76,16 @@ jobs:
         run: |
           current_package_version=$(node -p "require('./src/package.json').version")
 
-          # Extract changelog for current version
+          # Extract changelog for current version.
+          # Match both the changesets-style heading `## x.y.z` and the legacy
+          # bracketed heading `## [x.y.z] - date`, otherwise the release notes
+          # silently fall back to a generic message.
           echo "Extracting changelog for version ${current_package_version}"
-          changelog_content=$(sed -n "/## \\[${current_package_version}\\]/,/## \\[/p" CHANGELOG.md | sed '$d')
+          changelog_content=$(awk -v ver="${current_package_version}" '
+            $0 ~ "^## \\[?" ver "\\]?( |$)" { capture=1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' | sed -e ':a' -e '/^$/{$d;N;ba' -e '}')
 
           # If changelog extraction failed, use a default message
           if [ -z "$changelog_content" ]; then
