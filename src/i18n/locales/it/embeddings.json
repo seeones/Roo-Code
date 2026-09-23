@@ -30,6 +30,7 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Impossibile connettersi al database vettoriale Qdrant. Assicurati che Qdrant sia in esecuzione e accessibile su {{qdrantUrl}}. Errore: {{errorMessage}}",
+		"qdrantUpsertFailed": "Impossibile scrivere i vettori di embedding nel database vettoriale Qdrant",
 		"vectorDimensionMismatch": "Impossibile aggiornare l'indice vettoriale per il nuovo modello. Prova a cancellare l'indice e a ricominciare. Dettagli: {{errorMessage}}"
 	},
 	"validation": {

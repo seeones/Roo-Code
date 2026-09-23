@@ -2,7 +2,7 @@ import { ApiHandlerOptions } from "../../shared/api"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { EmbedderProvider } from "./interfaces/manager"
 import { CodeIndexConfig, PreviousConfigSnapshot } from "./interfaces/config"
-import { DEFAULT_SEARCH_MIN_SCORE, DEFAULT_MAX_SEARCH_RESULTS } from "./constants"
+import { DEFAULT_SEARCH_MIN_SCORE, DEFAULT_MAX_SEARCH_RESULTS, DEFAULT_BATCH_PROCESSING_CONCURRENCY } from "./constants"
 import { getDefaultModelId, getModelDimension, getModelScoreThreshold } from "../../shared/embeddingModels"
 
 /**
@@ -26,6 +26,7 @@ export class CodeIndexConfigManager {
 	private qdrantApiKey?: string
 	private searchMinScore?: number
 	private searchMaxResults?: number
+	private embeddingConcurrency?: number
 
 	constructor(private readonly contextProxy: ContextProxy) {
 		// Initialize with current configuration to avoid false restart triggers
@@ -86,6 +87,22 @@ export class CodeIndexConfigManager {
 		this.qdrantApiKey = qdrantApiKey ?? ""
 		this.searchMinScore = codebaseIndexSearchMinScore
 		this.searchMaxResults = codebaseIndexSearchMaxResults
+
+		// Validate and set embedding concurrency
+		const rawConcurrency = codebaseIndexConfig.codebaseIndexEmbeddingConcurrency
+		if (rawConcurrency !== undefined && rawConcurrency !== null) {
+			const concurrency = Number(rawConcurrency)
+			if (!isNaN(concurrency) && concurrency >= 1 && concurrency <= 50) {
+				this.embeddingConcurrency = concurrency
+			} else {
+				console.warn(
+					`Invalid codebaseIndexEmbeddingConcurrency value: ${rawConcurrency}. Must be between 1 and 50.`,
+				)
+				this.embeddingConcurrency = undefined
+			}
+		} else {
+			this.embeddingConcurrency = undefined
+		}
 
 		// Validate and set model dimension
 		const rawDimension = codebaseIndexConfig.codebaseIndexEmbedderModelDimension
@@ -460,6 +477,7 @@ export class CodeIndexConfigManager {
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,
 			searchMaxResults: this.currentSearchMaxResults,
+			embeddingConcurrency: this.currentEmbeddingConcurrency,
 		}
 	}
 
@@ -540,5 +558,13 @@ export class CodeIndexConfigManager {
 	 */
 	public get currentSearchMaxResults(): number {
 		return this.searchMaxResults ?? DEFAULT_MAX_SEARCH_RESULTS
+	}
+
+	/**
+	 * Gets the configured embedding batch concurrency.
+	 * Returns user setting if configured, otherwise returns default.
+	 */
+	public get currentEmbeddingConcurrency(): number {
+		return this.embeddingConcurrency ?? DEFAULT_BATCH_PROCESSING_CONCURRENCY
 	}
 }

@@ -101,7 +101,9 @@ vi.mock("vscode", () => {
 			tabGroups: {
 				all: [mockTabGroup],
 				close: vi.fn(),
-				onDidChangeTabs: vi.fn(() => ({ dispose: vi.fn() })),
+				onDidChangeTabs: vi.fn(function () {
+					return { dispose: vi.fn() }
+				}),
 			},
 			showErrorMessage: vi.fn(),
 		},
@@ -113,23 +115,29 @@ vi.mock("vscode", () => {
 					index: 0,
 				},
 			],
-			createFileSystemWatcher: vi.fn(() => ({
-				onDidCreate: vi.fn(() => mockDisposable),
-				onDidDelete: vi.fn(() => mockDisposable),
-				onDidChange: vi.fn(() => mockDisposable),
-				dispose: vi.fn(),
-			})),
+			createFileSystemWatcher: vi.fn(function () {
+				return {
+					onDidCreate: vi.fn(() => mockDisposable),
+					onDidDelete: vi.fn(() => mockDisposable),
+					onDidChange: vi.fn(() => mockDisposable),
+					dispose: vi.fn(),
+				}
+			}),
 			fs: {
 				stat: vi.fn().mockResolvedValue({ type: 1 }), // FileType.File = 1
 			},
 			onDidSaveTextDocument: vi.fn(() => mockDisposable),
-			getConfiguration: vi.fn(() => ({ get: (key: string, defaultValue: any) => defaultValue })),
+			getConfiguration: vi.fn(function () {
+				return { get: (key: string, defaultValue: any) => defaultValue }
+			}),
 		},
 		env: {
 			uriScheme: "vscode",
 			language: "en",
 		},
-		EventEmitter: vi.fn().mockImplementation(() => mockEventEmitter),
+		EventEmitter: vi.fn().mockImplementation(function () {
+			return mockEventEmitter
+		}),
 		Disposable: {
 			from: vi.fn(),
 		},
@@ -265,6 +273,7 @@ describe("Cline", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		// Setup mock API configuration
@@ -959,7 +968,9 @@ describe("Cline", () => {
 					context: {
 						globalStorageUri: { fsPath: "/test/storage" },
 						globalState: {
-							get: vi.fn().mockImplementation(() => undefined),
+							get: vi.fn().mockImplementation(function () {
+								return undefined
+							}),
 							update: vi.fn().mockResolvedValue(undefined),
 							keys: vi.fn().mockReturnValue([]),
 						},
@@ -1892,7 +1903,9 @@ describe("Queued message processing after condense", () => {
 			dispose: vi.fn(),
 		}
 
-		const provider = new ClineProvider(ctx, output as any, "sidebar", new ContextProxy(ctx)) as any
+		const provider = new ClineProvider(ctx, output as any, "sidebar", new ContextProxy(ctx), {
+			enableTaskHistoryWatcher: false,
+		}) as any
 		provider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.postStateToWebview = vi.fn().mockResolvedValue(undefined)
 		provider.postStateToWebviewWithoutTaskHistory = vi.fn().mockResolvedValue(undefined)
@@ -2030,6 +2043,7 @@ describe("pushToolResultToUserContent", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockExtensionContext),
+			{ enableTaskHistoryWatcher: false },
 		) as any
 
 		mockProvider.postMessageToWebview = vi.fn().mockResolvedValue(undefined)

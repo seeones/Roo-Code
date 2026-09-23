@@ -43,8 +43,11 @@ describe("TaskHistoryStore cross-instance safety", () => {
 	beforeEach(async () => {
 		tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "task-history-cross-"))
 		// Two stores pointing at the same globalStoragePath (simulating two VS Code windows)
-		storeA = new TaskHistoryStore(tmpDir)
-		storeB = new TaskHistoryStore(tmpDir)
+		// The fs.watch watcher is disabled: these tests exercise cross-instance safety
+		// deterministically via explicit reconcile() calls (watcher behavior is covered
+		// separately in TaskHistoryStore.watcher.spec.ts with a mocked fs.watch).
+		storeA = new TaskHistoryStore(tmpDir, { enableWatcher: false })
+		storeB = new TaskHistoryStore(tmpDir, { enableWatcher: false })
 	})
 
 	afterEach(async () => {

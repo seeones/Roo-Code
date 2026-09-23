@@ -30,6 +30,7 @@
 	},
 	"vectorStore": {
 		"qdrantConnectionFailed": "Qdrant वेक्टर डेटाबेस से कनेक्ट करने में विफल। कृपया सुनिश्चित करें कि Qdrant चल रहा है और {{qdrantUrl}} पर पहुंच योग्य है। त्रुटि: {{errorMessage}}",
+		"qdrantUpsertFailed": "Qdrant वेक्टर डेटाबेस में एम्बेडिंग वेक्टर लिखने में विफल",
 		"vectorDimensionMismatch": "नए मॉडल के लिए वेक्टर इंडेक्स को अपडेट करने में विफल। कृपया इंडेक्स को साफ़ करने और फिर से शुरू करने का प्रयास करें। विवरण: {{errorMessage}}"
 	},
 	"validation": {

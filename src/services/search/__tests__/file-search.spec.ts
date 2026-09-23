@@ -69,12 +69,12 @@ describe("file-search", () => {
 			}
 
 			;(vscode.workspace.getConfiguration as any).mockImplementation((section: string) => {
-				if (section === Package.name) return mockRooConfig
+				if (section === Package.configPrefix) return mockRooConfig
 				return { get: vi.fn() }
 			})
 
 			// The configuration should be readable
-			const config = vscode.workspace.getConfiguration(Package.name)
+			const config = vscode.workspace.getConfiguration(Package.configPrefix)
 			const limit = config.get("maximumIndexedFilesForFileSearch", 10000)
 
 			expect(limit).toBe(50000)
@@ -87,11 +87,11 @@ describe("file-search", () => {
 			}
 
 			;(vscode.workspace.getConfiguration as any).mockImplementation((section: string) => {
-				if (section === Package.name) return mockRooConfig
+				if (section === Package.configPrefix) return mockRooConfig
 				return { get: vi.fn() }
 			})
 
-			const config = vscode.workspace.getConfiguration(Package.name)
+			const config = vscode.workspace.getConfiguration(Package.configPrefix)
 			const limit = config.get("maximumIndexedFilesForFileSearch", 10000)
 
 			expect(limit).toBe(10000)

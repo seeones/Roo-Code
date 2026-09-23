@@ -18,6 +18,9 @@ vitest.mock("../../../../i18n", () => ({
 		if (key === "embeddings:vectorStore.qdrantConnectionFailed" && params?.qdrantUrl && params?.errorMessage) {
 			return `Failed to connect to Qdrant vector database. Please ensure Qdrant is running and accessible at ${params.qdrantUrl}. Error: ${params.errorMessage}`
 		}
+		if (key === "embeddings:vectorStore.qdrantUpsertFailed") {
+			return "Failed to write embeddings to the Qdrant vector database"
+		}
 		return key // Just return the key for other cases
 	},
 }))
@@ -58,7 +61,9 @@ describe("QdrantVectorStore", () => {
 		vitest.clearAllMocks()
 
 		// Mock QdrantClient constructor
-		;(QdrantClient as any).mockImplementation(() => mockQdrantClientInstance)
+		;(QdrantClient as any).mockImplementation(function () {
+			return mockQdrantClientInstance
+		})
 
 		// Mock crypto.createHash
 		;(createHash as any).mockReturnValue(mockCreateHashInstance)
@@ -610,7 +615,7 @@ describe("QdrantVectorStore", () => {
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createPayloadIndex.mockResolvedValue({} as any)
-			vitest.spyOn(console, "warn").mockImplementation(() => {}) // Suppress console.warn
+			vitest.spyOn(console, "warn").mockImplementation(function () {}) // Suppress console.warn
 
 			const result = await vectorStore.initialize()
 
@@ -650,7 +655,7 @@ describe("QdrantVectorStore", () => {
 		it("should log warning for non-404 errors but still create collection", async () => {
 			const genericError = new Error("Generic Qdrant Error")
 			mockQdrantClientInstance.getCollection.mockRejectedValue(genericError)
-			vitest.spyOn(console, "warn").mockImplementation(() => {}) // Suppress console.warn
+			vitest.spyOn(console, "warn").mockImplementation(function () {}) // Suppress console.warn
 
 			const result = await vectorStore.initialize()
 
@@ -672,7 +677,7 @@ describe("QdrantVectorStore", () => {
 			})
 			const createError = new Error("Create Collection Failed")
 			mockQdrantClientInstance.createCollection.mockRejectedValue(createError)
-			vitest.spyOn(console, "error").mockImplementation(() => {}) // Suppress console.error
+			vitest.spyOn(console, "error").mockImplementation(function () {}) // Suppress console.error
 
 			// The actual error message includes the URL and error details
 			await expect(vectorStore.initialize()).rejects.toThrow(
@@ -697,7 +702,7 @@ describe("QdrantVectorStore", () => {
 			// Mock payload index creation to fail
 			const indexError = new Error("Index creation failed")
 			mockQdrantClientInstance.createPayloadIndex.mockRejectedValue(indexError)
-			vitest.spyOn(console, "warn").mockImplementation(() => {}) // Suppress console.warn
+			vitest.spyOn(console, "warn").mockImplementation(function () {}) // Suppress console.warn
 
 			const result = await vectorStore.initialize()
 
@@ -739,8 +744,8 @@ describe("QdrantVectorStore", () => {
 
 			const deleteError = new Error("Delete Collection Failed")
 			mockQdrantClientInstance.deleteCollection.mockRejectedValue(deleteError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			// The error should have a cause property set to the original error
 			let caughtError: any
@@ -787,8 +792,8 @@ describe("QdrantVectorStore", () => {
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			const createError = new Error("Create Collection Failed")
 			mockQdrantClientInstance.createCollection.mockRejectedValue(createError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			// Should throw an error with cause property set to the original error
 			let caughtError: any
@@ -834,7 +839,7 @@ describe("QdrantVectorStore", () => {
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createPayloadIndex.mockResolvedValue({} as any)
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			const result = await vectorStore.initialize()
 
@@ -871,8 +876,8 @@ describe("QdrantVectorStore", () => {
 				} as any)
 
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			let caughtError: any
 			try {
@@ -921,7 +926,7 @@ describe("QdrantVectorStore", () => {
 			mockQdrantClientInstance.deleteCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createCollection.mockResolvedValue(true as any)
 			mockQdrantClientInstance.createPayloadIndex.mockResolvedValue({} as any)
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			const result = await newVectorStore.initialize()
 
@@ -959,8 +964,8 @@ describe("QdrantVectorStore", () => {
 			// Test deletion failure with specific error message
 			const deleteError = new Error("Qdrant server unavailable")
 			mockQdrantClientInstance.deleteCollection.mockRejectedValue(deleteError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
-			vitest.spyOn(console, "warn").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+			vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 			let caughtError: any
 			try {
@@ -1010,7 +1015,7 @@ describe("QdrantVectorStore", () => {
 	it("should return false and log warning for non-404 errors", async () => {
 		const genericError = new Error("Network error")
 		mockQdrantClientInstance.getCollection.mockRejectedValue(genericError)
-		vitest.spyOn(console, "warn").mockImplementation(() => {})
+		vitest.spyOn(console, "warn").mockImplementation(function () {})
 
 		const result = await vectorStore.collectionExists()
 
@@ -1049,7 +1054,7 @@ describe("QdrantVectorStore", () => {
 			vitest.spyOn(vectorStore, "collectionExists").mockResolvedValue(true)
 			const deleteError = new Error("Deletion failed")
 			mockQdrantClientInstance.deleteCollection.mockRejectedValue(deleteError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
 
 			await expect(vectorStore.deleteCollection()).rejects.toThrow(deleteError)
 
@@ -1216,7 +1221,7 @@ describe("QdrantVectorStore", () => {
 			})
 		})
 
-		it("should handle error scenarios when qdrantClient.upsert fails", async () => {
+		it("should re-throw errors without extra detail unchanged when qdrantClient.upsert fails", async () => {
 			const mockPoints = [
 				{
 					id: "test-id-1",
@@ -1230,14 +1235,119 @@ describe("QdrantVectorStore", () => {
 				},
 			]
 
+			// Plain Error without `data` - no extra detail to extract, original error is preserved
 			const upsertError = new Error("Upsert failed")
 			mockQdrantClientInstance.upsert.mockRejectedValue(upsertError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
 
-			await expect(vectorStore.upsertPoints(mockPoints)).rejects.toThrow(upsertError)
+			await expect(vectorStore.upsertPoints(mockPoints)).rejects.toBe(upsertError)
 
 			expect(mockQdrantClientInstance.upsert).toHaveBeenCalledTimes(1)
-			expect(console.error).toHaveBeenCalledWith("Failed to upsert points:", upsertError)
+			expect(console.error).toHaveBeenCalledWith("[QdrantVectorStore] Failed to upsert points:", upsertError)
+			;(console.error as any).mockRestore()
+		})
+
+		it("should enrich the error with the detailed server message from error.data.status.error", async () => {
+			const mockPoints = [
+				{
+					id: "test-id-1",
+					vector: [0.1, 0.2, 0.3],
+					payload: {
+						filePath: "src/test.ts",
+						content: "test content",
+						startLine: 1,
+						endLine: 1,
+					},
+				},
+			]
+
+			// Simulate the Qdrant ApiError shape: message is only the HTTP status text,
+			// while the detailed server message lives in `data.status.error`
+			const apiError = Object.assign(new Error("Bad Request"), {
+				status: 400,
+				statusText: "Bad Request",
+				url: "http://mock-qdrant:6333/collections/ws-test/points?wait=true",
+				data: {
+					status: {
+						error: "Wrong input: Validation error in JSON body: [points[0].vector[0]]: number 1.5 is not valid, expected integer",
+					},
+					time: 1.234,
+				},
+			})
+			mockQdrantClientInstance.upsert.mockRejectedValue(apiError)
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+
+			const errorPromise = vectorStore.upsertPoints(mockPoints).catch((e) => e)
+			const thrownError = await errorPromise
+
+			// Message must include the detailed server-side error, not just "Bad Request"
+			expect(thrownError.message).toContain("Failed to write embeddings to the Qdrant vector database")
+			expect(thrownError.message).toContain(
+				"Wrong input: Validation error in JSON body: [points[0].vector[0]]: number 1.5 is not valid, expected integer",
+			)
+			// Structured fields preserved for downstream detection (e.g. HTTP 429)
+			expect(thrownError.status).toBe(400)
+			expect(thrownError.cause).toBe(apiError)
+			;(console.error as any).mockRestore()
+		})
+
+		it("should preserve the status field so downstream callers can detect HTTP 429 rate limits", async () => {
+			const mockPoints = [
+				{
+					id: "test-id-1",
+					vector: [0.1, 0.2, 0.3],
+					payload: {
+						filePath: "src/test.ts",
+						content: "test content",
+						startLine: 1,
+						endLine: 1,
+					},
+				},
+			]
+
+			const rateLimitError = Object.assign(new Error("Too Many Requests"), {
+				status: 429,
+				statusText: "Too Many Requests",
+				data: { status: { error: "Collection is processing, please try again later" } },
+			})
+			mockQdrantClientInstance.upsert.mockRejectedValue(rateLimitError)
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+
+			const thrownError = await vectorStore.upsertPoints(mockPoints).catch((e) => e)
+
+			// `status` must survive the wrapping so the scanner's 429 detection keeps working
+			expect(thrownError.status).toBe(429)
+			expect(thrownError.message).toContain("Collection is processing, please try again later")
+			;(console.error as any).mockRestore()
+		})
+
+		it("should fall back to the raw response body when data.status.error is absent", async () => {
+			const mockPoints = [
+				{
+					id: "test-id-1",
+					vector: [0.1, 0.2, 0.3],
+					payload: {
+						filePath: "src/test.ts",
+						content: "test content",
+						startLine: 1,
+						endLine: 1,
+					},
+				},
+			]
+
+			// data exists but has no nested status.error - should serialize the body as detail
+			const apiError = Object.assign(new Error("Bad Request"), {
+				status: 400,
+				data: { detail: "some raw server response" },
+			})
+			mockQdrantClientInstance.upsert.mockRejectedValue(apiError)
+			vitest.spyOn(console, "error").mockImplementation(function () {})
+
+			const thrownError = await vectorStore.upsertPoints(mockPoints).catch((e) => e)
+
+			expect(thrownError.message).toContain("Failed to write embeddings to the Qdrant vector database")
+			expect(thrownError.message).toContain('"detail":"some raw server response"')
+			expect(thrownError.status).toBe(400)
 			;(console.error as any).mockRestore()
 		})
 	})
@@ -1534,7 +1644,7 @@ describe("QdrantVectorStore", () => {
 			const queryVector = [0.1, 0.2, 0.3]
 			const queryError = new Error("Query failed")
 			mockQdrantClientInstance.query.mockRejectedValue(queryError)
-			vitest.spyOn(console, "error").mockImplementation(() => {})
+			vitest.spyOn(console, "error").mockImplementation(function () {})
 
 			await expect(vectorStore.search(queryVector)).rejects.toThrow(queryError)
 

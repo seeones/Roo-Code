@@ -12,6 +12,10 @@ export const CODEBASE_INDEX_DEFAULTS = {
 	MAX_SEARCH_SCORE: 1,
 	DEFAULT_SEARCH_MIN_SCORE: 0.4,
 	SEARCH_SCORE_STEP: 0.05,
+	MIN_EMBEDDING_CONCURRENCY: 1,
+	MAX_EMBEDDING_CONCURRENCY: 50,
+	DEFAULT_EMBEDDING_CONCURRENCY: 10,
+	EMBEDDING_CONCURRENCY_STEP: 1,
 } as const
 
 /**
@@ -50,6 +54,12 @@ export const codebaseIndexConfigSchema = z.object({
 	codebaseIndexBedrockProfile: z.string().optional(),
 	// OpenRouter specific fields
 	codebaseIndexOpenRouterSpecificProvider: z.string().optional(),
+	// Embedding performance tuning
+	codebaseIndexEmbeddingConcurrency: z
+		.number()
+		.min(CODEBASE_INDEX_DEFAULTS.MIN_EMBEDDING_CONCURRENCY)
+		.max(CODEBASE_INDEX_DEFAULTS.MAX_EMBEDDING_CONCURRENCY)
+		.optional(),
 })
 
 export type CodebaseIndexConfig = z.infer<typeof codebaseIndexConfigSchema>
