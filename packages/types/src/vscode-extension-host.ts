@@ -92,9 +92,19 @@ export interface ExtensionMessage {
 		| "folderSelected"
 		| "skills"
 		| "fileContent"
+		| "webviewError"
+		| "ping"
 	text?: string
 	/** For fileContent: { path, content, error? } */
 	fileContent?: { path: string; content: string | null; error?: string }
+	/** Webview runtime error reported by the webview for observability (grey screen diagnosis). */
+	webviewError?: {
+		message: string
+		stack?: string
+		componentStack?: string
+		source: "error" | "unhandledrejection" | "errorboundary"
+		url?: string
+	}
 	payload?: any // eslint-disable-line @typescript-eslint/no-explicit-any
 	checkpointWarning?: {
 		type: "WAIT_TIMEOUT" | "INIT_TIMEOUT"
@@ -279,6 +289,7 @@ export type ExtensionState = Pick<
 	| "includeTaskHistoryInEnhance"
 	| "reasoningBlockCollapsed"
 	| "enterBehavior"
+	| "chatInputEffect"
 	| "includeCurrentTime"
 	| "includeCurrentCost"
 	| "maxGitStatusFiles"
@@ -521,7 +532,18 @@ export interface WebviewMessage {
 		| "moveSkill"
 		| "updateSkillModes"
 		| "openSkillFile"
+		// Observability & recovery
+		| "webviewError"
+		| "pong"
 	text?: string
+	/** Webview runtime error payload reported by the webview (for extension-side logging). */
+	webviewError?: {
+		message: string
+		stack?: string
+		componentStack?: string
+		source: "error" | "unhandledrejection" | "errorboundary"
+		url?: string
+	}
 	taskId?: string
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat"
@@ -604,6 +626,7 @@ export interface WebviewMessage {
 		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
+		codebaseIndexEmbeddingConcurrency?: number
 		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
 
 		// Secret settings
@@ -667,6 +690,16 @@ export type WebViewMessagePayload =
 	| UpdateTodoListPayload
 	| EditQueuedMessagePayload
 
+export type BatchStage = "idle" | "embedding" | "rate_limited" | "upserting"
+
+export interface BatchSlotStatus {
+	slotId: number
+	stage: BatchStage
+	blockCount: number
+	retryCount: number
+	rateLimitResetTime?: number
+}
+
 export interface IndexingStatus {
 	systemStatus: string
 	message?: string
@@ -676,6 +709,15 @@ export interface IndexingStatus {
 	workspacePath?: string
 	workspaceEnabled?: boolean
 	autoEnableDefault?: boolean
+	currentFile?: string
+	pendingBatches?: number
+	activeBatches?: number
+	queuedBatches?: number
+	batchSlots?: BatchSlotStatus[]
+	batchConcurrency?: number
+	isRateLimited?: boolean
+	rateLimitResetTime?: number
+	rateLimitRetryCount?: number
 }
 
 export interface IndexingStatusUpdateMessage {

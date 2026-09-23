@@ -598,6 +598,23 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			provider.isViewLaunched = true
 			break
+		case "webviewError":
+			// Observability: webview runtime errors (grey-screen diagnosis).
+			// Logged to the output channel so crashes are never invisible to the extension side.
+			provider.log(
+				`[WebviewError:${message.webviewError?.source ?? "unknown"}] ${message.webviewError?.message ?? "Unknown error"}`,
+			)
+			if (message.webviewError?.stack) {
+				provider.log(`[WebviewErrorStack] ${message.webviewError.stack}`)
+			}
+			if (message.webviewError?.componentStack) {
+				provider.log(`[WebviewErrorComponentStack] ${message.webviewError.componentStack}`)
+			}
+			break
+		case "pong":
+			// Heartbeat response: webview is alive and responsive.
+			provider.handlePong()
+			break
 		case "newTask":
 			// Initializing new instance of Cline will make sure that any
 			// agentically running promises in old instance don't affect our new
@@ -651,7 +668,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 							: []
 
 						await vscode.workspace
-							.getConfiguration(Package.name)
+							.getConfiguration(Package.configPrefix)
 							.update("allowedCommands", newValue, vscode.ConfigurationTarget.Global)
 					} else if (key === "deniedCommands") {
 						const commands = value ?? []
@@ -661,7 +678,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 							: []
 
 						await vscode.workspace
-							.getConfiguration(Package.name)
+							.getConfiguration(Package.configPrefix)
 							.update("deniedCommands", newValue, vscode.ConfigurationTarget.Global)
 					} else if (key === "ttsEnabled") {
 						newValue = value ?? true
@@ -1204,7 +1221,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			// Also update workspace settings.
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("allowedCommands", validCommands, vscode.ConfigurationTarget.Global)
 
 			break
@@ -1220,7 +1237,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 			// Also update workspace settings.
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("deniedCommands", validCommands, vscode.ConfigurationTarget.Global)
 
 			break
@@ -2130,7 +2147,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			break
 		case "debugSetting": {
 			await vscode.workspace
-				.getConfiguration(Package.name)
+				.getConfiguration(Package.configPrefix)
 				.update("debug", message.bool ?? false, vscode.ConfigurationTarget.Global)
 			await provider.postStateToWebview()
 			break
@@ -2201,6 +2218,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 					codebaseIndexBedrockProfile: settings.codebaseIndexBedrockProfile,
 					codebaseIndexSearchMaxResults: settings.codebaseIndexSearchMaxResults,
 					codebaseIndexSearchMinScore: settings.codebaseIndexSearchMinScore,
+					codebaseIndexEmbeddingConcurrency: settings.codebaseIndexEmbeddingConcurrency,
 					codebaseIndexOpenRouterSpecificProvider: settings.codebaseIndexOpenRouterSpecificProvider,
 				}
 

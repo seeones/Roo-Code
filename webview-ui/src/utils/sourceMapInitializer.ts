@@ -9,6 +9,40 @@
  */
 
 import { enhanceErrorWithSourceMaps } from "./sourceMapUtils"
+import { vscode } from "./vscode"
+
+/**
+ * Report a webview runtime error to the extension host for observability.
+ *
+ * The extension host logs it to the output channel. This is the foundation of
+ * grey-screen diagnosis: without it, any webview crash is invisible to the
+ * extension side and cannot be verified against candidate fixes.
+ *
+ * Safe to call from anywhere; never throws (reporting must not cause a
+ * recursive failure).
+ */
+export function reportWebviewError(
+	error: unknown,
+	source: "error" | "unhandledrejection" | "errorboundary",
+	componentStack?: string,
+): void {
+	try {
+		const message = error instanceof Error ? error.message : String(error)
+		const stack = error instanceof Error ? error.stack : undefined
+		vscode.postMessage({
+			type: "webviewError",
+			webviewError: {
+				message,
+				stack,
+				componentStack,
+				source,
+				url: typeof window !== "undefined" ? window.location.href : undefined,
+			},
+		})
+	} catch {
+		// Never let observability itself break the app.
+	}
+}
 
 /**
  * Initialize source map support for production builds
@@ -23,6 +57,10 @@ export function initializeSourceMaps(): void {
 
 	// Set up global error handler
 	window.addEventListener("error", async (event) => {
+		// Report the raw error to the extension host first, so a crash is never
+		// lost even if source-map enhancement fails below.
+		reportWebviewError(event.error ?? event.message, "error")
+
 		if (event.error && event.error instanceof Error) {
 			try {
 				// Apply source maps to the error
@@ -40,6 +78,8 @@ export function initializeSourceMaps(): void {
 
 	// Set up unhandled promise rejection handler
 	window.addEventListener("unhandledrejection", async (event) => {
+		reportWebviewError(event.reason ?? "Unhandled promise rejection", "unhandledrejection")
+
 		if (event.reason && event.reason instanceof Error) {
 			try {
 				// Apply source maps to the error
@@ -53,56 +93,57 @@ export function initializeSourceMaps(): void {
 		}
 	})
 
-	// Preload source maps for all scripts
+	// Preload source maps for all scripts.
+	// We own the build pipeline (see webview-ui/vite.config.ts and the
+	// sourcemapPlugin), which appends a sourceMappingURL comment to every
+	// generated chunk. Reading that comment is the single source of truth for
+	// the map's real file name, so we do NOT guess candidate names (which
+	// produced spurious 404s in the webview logs).
 	try {
 		const scripts = document.getElementsByTagName("script")
 		for (let i = 0; i < scripts.length; i++) {
 			const script = scripts[i]
-			if (script.src) {
-				// Try multiple source map locations
-				const possibleMapUrls = [
-					`${script.src}.map`,
-					`${script.src}?source-map=true`,
-					script.src.replace(/\.js$/, ".js.map"),
-					script.src.replace(/\.js$/, ".map.json"),
-					script.src.replace(/\.js$/, ".sourcemap"),
-				]
-
-				// Preload all possible source map locations
-				for (const mapUrl of possibleMapUrls) {
-					const link = document.createElement("link")
-					link.rel = "preload"
-					link.as = "fetch"
-					link.href = mapUrl
-					link.crossOrigin = "anonymous"
-					document.head.appendChild(link)
-				}
-
-				// Also check for inline sourceMappingURL comments
-				fetch(script.src)
-					.then((response) => response.text())
-					.then((content) => {
-						const sourceMappingURLMatch = content.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/)
-						if (sourceMappingURLMatch && sourceMappingURLMatch[1]) {
-							const sourceMappingURL = sourceMappingURLMatch[1]
-
-							// If it's not a data: URL, preload it
-							if (!sourceMappingURL.startsWith("data:")) {
-								const scriptUrlObj = new URL(script.src)
-								const baseUrl = scriptUrlObj.href.substring(0, scriptUrlObj.href.lastIndexOf("/") + 1)
-								const fullUrl = new URL(sourceMappingURL, baseUrl).href
-
-								const link = document.createElement("link")
-								link.rel = "preload"
-								link.as = "fetch"
-								link.href = fullUrl
-								link.crossOrigin = "anonymous"
-								document.head.appendChild(link)
-							}
-						}
-					})
-					.catch((e) => console.debug("Error checking for inline sourceMappingURL:", e))
+			if (!script.src) {
+				continue
 			}
+
+			// Resolve the map URL from the inline sourceMappingURL comment.
+			fetch(script.src)
+				.then((response) => response.text())
+				.then((content) => {
+					const sourceMappingURLMatch = content.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/)
+					if (!sourceMappingURLMatch || !sourceMappingURLMatch[1]) {
+						return
+					}
+
+					const sourceMappingURL = sourceMappingURLMatch[1]
+
+					// Inline data: maps need no preload.
+					if (sourceMappingURL.startsWith("data:")) {
+						return
+					}
+
+					const scriptUrlObj = new URL(script.src)
+					const baseUrl = scriptUrlObj.href.substring(0, scriptUrlObj.href.lastIndexOf("/") + 1)
+					const fullUrl = new URL(sourceMappingURL, baseUrl).href
+
+					// Probe first so we only preload maps that actually exist.
+					return fetch(fullUrl)
+						.then((mapResponse) => {
+							if (!mapResponse.ok) {
+								console.debug(`Source map not found (skipping preload): ${fullUrl}`)
+								return
+							}
+							const link = document.createElement("link")
+							link.rel = "preload"
+							link.as = "fetch"
+							link.href = fullUrl
+							link.crossOrigin = "anonymous"
+							document.head.appendChild(link)
+						})
+						.catch((e) => console.debug("Error probing source map:", e))
+				})
+				.catch((e) => console.debug("Error checking for inline sourceMappingURL:", e))
 		}
 	} catch (e) {
 		console.error("Error preloading source maps:", e)
