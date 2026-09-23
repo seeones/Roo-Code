@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "Réinitialiser à la valeur par défaut (0.4)",
 		"searchMaxResultsLabel": "Résultats de recherche maximum",
 		"searchMaxResultsDescription": "Nombre maximum de résultats de recherche à retourner lors de l'interrogation de l'index de code. Des valeurs plus élevées fournissent plus de contexte mais peuvent inclure des résultats moins pertinents.",
+		"embeddingConcurrencyLabel": "Concurrence des requêtes d'embedding",
+		"embeddingConcurrencyDescription": "Nombre de requêtes d'embedding simultanées pendant l'indexation. Des valeurs plus faibles réduisent les problèmes de limite de débit de l'API mais ralentissent l'indexation. Des valeurs plus élevées accélèrent l'indexation mais peuvent déclencher des limites de débit.",
+		"pendingBatches": "{{count}} lots en file d'attente",
+		"batchSummary": "{{active}} actifs / {{queued}} en file / {{total}} lots au total",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "blocs",
+		"retryCount": "nouvelle tentative {{count}}",
+		"batchStage": {
+			"idle": "Inactif",
+			"embedding": "Requête de l'API d'embedding",
+			"rate_limited": "Limite de débit atteinte",
+			"upserting": "Écriture dans le magasin vectoriel"
+		},
+		"rateLimited": "Limite de débit de l'API atteinte (nouvelle tentative {{retryCount}}) — attente avant de réessayer",
 		"resetToDefault": "Réinitialiser par défaut",
 		"stopIndexingButton": "Arrêter l'indexation",
 		"stoppingButton": "Arrêt en cours...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "Réduire les messages de réflexion par défaut",
 			"description": "Si activé, les blocs de réflexion seront réduits par défaut jusqu'à ce que vous interagissiez avec eux"
+		},
+		"chatInputEffect": {
+			"label": "Effet de la zone de saisie pendant le travail de l'IA",
+			"marquee": "Défilement (bordure rotative)",
+			"breathing": "Respiration (lueur pulsante)",
+			"description": "Choisissez l'effet d'animation de la bordure de la zone de saisie pendant que l'IA travaille"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "Exiger {{primaryMod}}+Entrée pour envoyer les messages",

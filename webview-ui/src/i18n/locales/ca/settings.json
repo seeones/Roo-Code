@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "Restablir al valor per defecte (0.4)",
 		"searchMaxResultsLabel": "Màxim de resultats de cerca",
 		"searchMaxResultsDescription": "Nombre màxim de resultats de cerca a retornar quan es consulta l'índex de la base de codi. Els valors més alts proporcionen més context però poden incloure resultats menys rellevants.",
+		"embeddingConcurrencyLabel": "Concurrència de sol·licituds d'embedding",
+		"embeddingConcurrencyDescription": "Nombre de sol·licituds d'embedding simultànies durant la indexació. Valors més baixos redueixen els problemes de limitació de velocitat de l'API però alenteixen la indexació. Valors més alts acceleren la indexació però poden activar limitacions de velocitat.",
+		"pendingBatches": "{{count}} lots a la cua",
+		"batchSummary": "{{active}} actius / {{queued}} en espera / {{total}} lots en total",
+		"batchSlotLabel": "Slot {{id}}",
+		"blocksUnit": "blocs",
+		"retryCount": "reintent {{count}}",
+		"batchStage": {
+			"idle": "Inactiu",
+			"embedding": "Sol·licitant l'API d'embedding",
+			"rate_limited": "Limitació de velocitat",
+			"upserting": "Escrivint al magatzem vectorial"
+		},
+		"rateLimited": "L'API ha estat limitada (reintent {{retryCount}}) — esperant abans de tornar-ho a provar",
 		"resetToDefault": "Restablir al valor per defecte",
 		"stopIndexingButton": "Aturar indexació",
 		"stoppingButton": "Aturant...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "Replega els missatges de pensament per defecte",
 			"description": "Quan estigui activat, els blocs de pensament es replegaran per defecte fins que interactuïs amb ells"
+		},
+		"chatInputEffect": {
+			"label": "Efecte de la caixa d'entrada mentre l'IA treballa",
+			"marquee": "Efecte marquesina (vora giratòria)",
+			"breathing": "Efecte de respiració (brillantor pulsant)",
+			"description": "Tria l'efecte d'animació de la vora de la caixa d'entrada mentre l'IA treballa"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "Requereix {{primaryMod}}+Intro per enviar missatges",

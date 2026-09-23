@@ -203,6 +203,20 @@
 		"searchMinScoreResetTooltip": "デフォルト値（0.4）にリセット",
 		"searchMaxResultsLabel": "最大検索結果数",
 		"searchMaxResultsDescription": "コードベースインデックスをクエリする際に返される検索結果の最大数。値を高くするとより多くのコンテキストが提供されますが、関連性の低い結果が含まれる可能性があります。",
+		"embeddingConcurrencyLabel": "埋め込みリクエストの並行数",
+		"embeddingConcurrencyDescription": "インデックス作成中の同時埋め込みリクエスト数。値を低くするとAPIレート制限の問題は減りますが、インデックス作成が遅くなります。値を高くするとインデックス作成は速くなりますが、レート制限が発生する可能性があります。",
+		"pendingBatches": "キューに{{count}}バッチ",
+		"batchSummary": "{{active}}アクティブ / {{queued}}待機中 / 合計{{total}}バッチ",
+		"batchSlotLabel": "スロット {{id}}",
+		"blocksUnit": "ブロック",
+		"retryCount": "再試行{{count}}",
+		"batchStage": {
+			"idle": "アイドル",
+			"embedding": "埋め込みAPIをリクエスト中",
+			"rate_limited": "レート制限中",
+			"upserting": "ベクターストアに書き込み中"
+		},
+		"rateLimited": "APIがレート制限されました（再試行{{retryCount}}）— 再試行前に待機中",
 		"resetToDefault": "デフォルトにリセット",
 		"stopIndexingButton": "インデックス作成を停止",
 		"stoppingButton": "停止中...",
@@ -937,6 +951,12 @@
 		"collapseThinking": {
 			"label": "デフォルトで思考メッセージを折りたたむ",
 			"description": "有効にすると、操作するまで思考ブロックがデフォルトで折りたたまれます"
+		},
+		"chatInputEffect": {
+			"label": "AI作業中の入力ボックスエフェクト",
+			"marquee": "マーキー（回転する枠線）",
+			"breathing": "ブリージング（脈動する光）",
+			"description": "AI作業中にチャット入力ボックスの枠線アニメーション効果を選択"
 		},
 		"requireCtrlEnterToSend": {
 			"label": "メッセージを送信するには{{primaryMod}}+Enterが必要",

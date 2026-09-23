@@ -1670,7 +1670,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								</>
 							) : (
 								<>
-									{primaryButtonText && (
+									{primaryButtonText && primaryButtonText !== t("chat:startNewTask.title") && (
 										<StandardTooltip
 											content={
 												primaryButtonText === t("chat:retry.title")
@@ -1681,17 +1681,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 															? t("chat:approve.tooltip")
 															: primaryButtonText === t("chat:runCommand.title")
 																? t("chat:runCommand.tooltip")
-																: primaryButtonText === t("chat:startNewTask.title")
-																	? t("chat:startNewTask.tooltip")
-																	: primaryButtonText === t("chat:resumeTask.title")
-																		? t("chat:resumeTask.tooltip")
+																: primaryButtonText === t("chat:resumeTask.title")
+																	? t("chat:resumeTask.tooltip")
+																	: primaryButtonText ===
+																		  t("chat:proceedAnyways.title")
+																		? t("chat:proceedAnyways.tooltip")
 																		: primaryButtonText ===
-																			  t("chat:proceedAnyways.title")
-																			? t("chat:proceedAnyways.tooltip")
-																			: primaryButtonText ===
-																				  t("chat:proceedWhileRunning.title")
-																				? t("chat:proceedWhileRunning.tooltip")
-																				: undefined
+																			  t("chat:proceedWhileRunning.title")
+																			? t("chat:proceedWhileRunning.tooltip")
+																			: undefined
 											}>
 											<Button
 												variant="primary"
@@ -1702,18 +1700,16 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 											</Button>
 										</StandardTooltip>
 									)}
-									{secondaryButtonText && (
+									{secondaryButtonText && secondaryButtonText !== t("chat:startNewTask.title") && (
 										<StandardTooltip
 											content={
-												secondaryButtonText === t("chat:startNewTask.title")
-													? t("chat:startNewTask.tooltip")
-													: secondaryButtonText === t("chat:reject.title")
-														? t("chat:reject.tooltip")
-														: secondaryButtonText === t("chat:terminate.title")
-															? t("chat:terminate.tooltip")
-															: secondaryButtonText === t("chat:killCommand.title")
-																? t("chat:killCommand.tooltip")
-																: undefined
+												secondaryButtonText === t("chat:reject.title")
+													? t("chat:reject.tooltip")
+													: secondaryButtonText === t("chat:terminate.title")
+														? t("chat:terminate.tooltip")
+														: secondaryButtonText === t("chat:killCommand.title")
+															? t("chat:killCommand.tooltip")
+															: undefined
 											}>
 											<Button
 												variant="secondary"

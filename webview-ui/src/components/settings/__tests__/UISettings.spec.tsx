@@ -2,10 +2,34 @@ import { render, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { UISettings } from "../UISettings"
 
+vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+	VSCodeCheckbox: ({ children, onChange, checked, "data-testid": dataTestId }: any) => (
+		<label>
+			<input
+				type="checkbox"
+				checked={checked}
+				onChange={(e) => onChange({ target: { checked: e.target.checked } })}
+				data-testid={dataTestId}
+			/>
+			{children}
+		</label>
+	),
+	VSCodeDropdown: ({ value, onChange, children, "data-testid": dataTestId }: any) => (
+		<select
+			value={value}
+			onChange={(e) => onChange({ target: { value: e.target.value } })}
+			data-testid={dataTestId}>
+			{children}
+		</select>
+	),
+	VSCodeOption: ({ value, children }: any) => <option value={value}>{children}</option>,
+}))
+
 describe("UISettings", () => {
 	const defaultProps = {
 		reasoningBlockCollapsed: false,
 		enterBehavior: "send" as const,
+		chatInputEffect: "marquee" as const,
 		setCachedStateField: vi.fn(),
 	}
 
@@ -40,5 +64,24 @@ describe("UISettings", () => {
 
 		rerender(<UISettings {...defaultProps} reasoningBlockCollapsed={true} />)
 		expect(checkbox.checked).toBe(true)
+	})
+
+	it("renders the chat input effect dropdown", () => {
+		const { getByTestId } = render(<UISettings {...defaultProps} />)
+		const dropdown = getByTestId("chat-input-effect-dropdown") as HTMLSelectElement
+		expect(dropdown).toBeTruthy()
+		expect(dropdown.value).toBe("marquee")
+	})
+
+	it("calls setCachedStateField when chat input effect is changed", async () => {
+		const setCachedStateField = vi.fn()
+		const { getByTestId } = render(<UISettings {...defaultProps} setCachedStateField={setCachedStateField} />)
+
+		const dropdown = getByTestId("chat-input-effect-dropdown")
+		fireEvent.change(dropdown, { target: { value: "breathing" } })
+
+		await waitFor(() => {
+			expect(setCachedStateField).toHaveBeenCalledWith("chatInputEffect", "breathing")
+		})
 	})
 })
