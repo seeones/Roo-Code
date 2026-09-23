@@ -95,19 +95,23 @@ vi.mock("delay", () => {
 // MCP-related modules are mocked once above (lines 87-109).
 
 vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
-	Client: vi.fn().mockImplementation(() => ({
-		connect: vi.fn().mockResolvedValue(undefined),
-		close: vi.fn().mockResolvedValue(undefined),
-		listTools: vi.fn().mockResolvedValue({ tools: [] }),
-		callTool: vi.fn().mockResolvedValue({ content: [] }),
-	})),
+	Client: vi.fn().mockImplementation(function () {
+		return {
+			connect: vi.fn().mockResolvedValue(undefined),
+			close: vi.fn().mockResolvedValue(undefined),
+			listTools: vi.fn().mockResolvedValue({ tools: [] }),
+			callTool: vi.fn().mockResolvedValue({ content: [] }),
+		}
+	}),
 }))
 
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
-	StdioClientTransport: vi.fn().mockImplementation(() => ({
-		connect: vi.fn().mockResolvedValue(undefined),
-		close: vi.fn().mockResolvedValue(undefined),
-	})),
+	StdioClientTransport: vi.fn().mockImplementation(function () {
+		return {
+			connect: vi.fn().mockResolvedValue(undefined),
+			close: vi.fn().mockResolvedValue(undefined),
+		}
+	}),
 }))
 
 vi.mock("vscode", () => ({
@@ -129,20 +133,32 @@ vi.mock("vscode", () => ({
 		showInformationMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 		showErrorMessage: vi.fn(),
-		onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidChangeActiveTextEditor: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 	},
 	workspace: {
 		getConfiguration: vi.fn().mockReturnValue({
 			get: vi.fn().mockReturnValue([]),
 			update: vi.fn(),
 		}),
-		onDidChangeConfiguration: vi.fn().mockImplementation(() => ({
-			dispose: vi.fn(),
-		})),
-		onDidSaveTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
-		onDidCloseTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+		onDidChangeConfiguration: vi.fn().mockImplementation(function () {
+			return {
+				dispose: vi.fn(),
+			}
+		}),
+		onDidSaveTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidChangeTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidOpenTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
+		onDidCloseTextDocument: vi.fn(function () {
+			return { dispose: vi.fn() }
+		}),
 	},
 	env: {
 		uriScheme: "vscode",
@@ -173,29 +189,33 @@ vi.mock("../../prompts/system", () => ({
 
 vi.mock("../../../integrations/workspace/WorkspaceTracker", () => {
 	return {
-		default: vi.fn().mockImplementation(() => ({
-			initializeFilePaths: vi.fn(),
-			dispose: vi.fn(),
-		})),
+		default: vi.fn().mockImplementation(function () {
+			return {
+				initializeFilePaths: vi.fn(),
+				dispose: vi.fn(),
+			}
+		}),
 	}
 })
 
 vi.mock("../../task/Task", () => ({
-	Task: vi.fn().mockImplementation((options: any) => ({
-		api: undefined,
-		abortTask: vi.fn(),
-		handleWebviewAskResponse: vi.fn(),
-		clineMessages: [],
-		apiConversationHistory: [],
-		overwriteClineMessages: vi.fn(),
-		overwriteApiConversationHistory: vi.fn(),
-		getTaskNumber: vi.fn().mockReturnValue(0),
-		setTaskNumber: vi.fn(),
-		setParentTask: vi.fn(),
-		setRootTask: vi.fn(),
-		taskId: options?.historyItem?.id || "test-task-id",
-		emit: vi.fn(),
-	})),
+	Task: vi.fn().mockImplementation(function (options: any) {
+		return {
+			api: undefined,
+			abortTask: vi.fn(),
+			handleWebviewAskResponse: vi.fn(),
+			clineMessages: [],
+			apiConversationHistory: [],
+			overwriteClineMessages: vi.fn(),
+			overwriteApiConversationHistory: vi.fn(),
+			getTaskNumber: vi.fn().mockReturnValue(0),
+			setTaskNumber: vi.fn(),
+			setParentTask: vi.fn(),
+			setRootTask: vi.fn(),
+			taskId: options?.historyItem?.id || "test-task-id",
+			emit: vi.fn(),
+		}
+	}),
 }))
 
 vi.mock("../../../integrations/misc/extract-text", () => ({
@@ -239,7 +259,7 @@ vi.mock("../../../shared/modes", () => ({
 		roleDefinition: "You are a code assistant",
 		groups: ["read", "edit"],
 	}),
-	getGroupName: vi.fn().mockImplementation((group: string) => {
+	getGroupName: vi.fn().mockImplementation(function (group: string) {
 		// Return appropriate group names for different tool groups
 		switch (group) {
 			case "read":
@@ -283,11 +303,13 @@ vi.mock("../../../api/providers/fetchers/modelCache", () => ({
 }))
 
 vi.mock("../diff/strategies/multi-search-replace", () => ({
-	MultiSearchReplaceDiffStrategy: vi.fn().mockImplementation(() => ({
-		getToolDescription: () => "test",
-		getName: () => "test-strategy",
-		applyDiff: vi.fn(),
-	})),
+	MultiSearchReplaceDiffStrategy: vi.fn().mockImplementation(function () {
+		return {
+			getToolDescription: () => "test",
+			getName: () => "test-strategy",
+			applyDiff: vi.fn(),
+		}
+	}),
 }))
 
 afterAll(() => {
@@ -296,7 +318,7 @@ afterAll(() => {
 
 describe("ClineProvider", () => {
 	beforeAll(() => {
-		vi.mocked(Task).mockImplementation((options: any) => {
+		vi.mocked(Task).mockImplementation(function (options: any) {
 			const task: any = {
 				api: undefined,
 				abortTask: vi.fn(),
@@ -396,14 +418,18 @@ describe("ClineProvider", () => {
 				cspSource: "vscode-webview://test-csp-source",
 			},
 			visible: true,
-			onDidDispose: vi.fn().mockImplementation((callback) => {
+			onDidDispose: vi.fn().mockImplementation(function (callback) {
 				callback()
 				return { dispose: vi.fn() }
 			}),
-			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+			onDidChangeVisibility: vi.fn().mockImplementation(function () {
+				return { dispose: vi.fn() }
+			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		defaultTaskOptions = {
 			provider,
@@ -453,6 +479,7 @@ describe("ClineProvider", () => {
 			mockOutputChannel,
 			"sidebar",
 			new ContextProxy(mockContext),
+			{ enableTaskHistoryWatcher: false },
 		)
 		;(axios.get as any).mockRejectedValueOnce(new Error("Network error"))
 
@@ -1007,7 +1034,7 @@ describe("ClineProvider", () => {
 
 	test("customModePrompts defaults to empty object", async () => {
 		// Mock globalState.get to return undefined for customModePrompts
-		;(mockContext.globalState.get as any).mockImplementation((key: string) => {
+		;(mockContext.globalState.get as any).mockImplementation(function (key: string) {
 			if (key === "customModePrompts") {
 				return undefined
 			}
@@ -1040,7 +1067,7 @@ describe("ClineProvider", () => {
 				customInstructions: "Old instructions",
 			},
 		}
-		mockContext.globalState.get = vi.fn((key: string) => {
+		mockContext.globalState.get = vi.fn(function (key: string) {
 			if (key === "customModePrompts") {
 				return existingPrompts
 			}
@@ -1072,7 +1099,7 @@ describe("ClineProvider", () => {
 			...mockContext,
 			globalState: {
 				...mockContext.globalState,
-				get: vi.fn((key: string) => {
+				get: vi.fn(function (key: string) {
 					if (key === "mode") {
 						return "code"
 					} else if (key === "currentApiConfigName") {
@@ -1086,7 +1113,9 @@ describe("ClineProvider", () => {
 		} as unknown as vscode.ExtensionContext
 
 		// Create new provider with updated mock context
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 		await provider.resolveWebviewView(mockWebviewView)
 		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
@@ -1288,11 +1317,13 @@ describe("ClineProvider", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 			// Reset and setup mock
 			mockAddCustomInstructions.mockClear()
-			mockAddCustomInstructions.mockImplementation(
-				(modeInstructions: string, globalInstructions: string, _cwd: string) => {
-					return Promise.resolve(modeInstructions || globalInstructions || "")
-				},
-			)
+			mockAddCustomInstructions.mockImplementation(function (
+				modeInstructions: string,
+				globalInstructions: string,
+				_cwd: string,
+			) {
+				return Promise.resolve(modeInstructions || globalInstructions || "")
+			})
 		})
 
 		const getMessageHandler = () => {
@@ -1471,7 +1502,7 @@ describe("ClineProvider", () => {
 			// Mock the ContextProxy's getValue method to return the current config name
 			const contextProxy = (provider as any).contextProxy
 			const getValueSpy = vi.spyOn(contextProxy, "getValue")
-			getValueSpy.mockImplementation((key: any) => {
+			getValueSpy.mockImplementation(function (key: any) {
 				if (key === "currentApiConfigName") return "current-config"
 				return undefined
 			})
@@ -1890,7 +1921,7 @@ describe("ClineProvider", () => {
 			// Mock buildApiHandler to throw an error
 			const { buildApiHandler } = await import("../../../api")
 
-			;(buildApiHandler as any).mockImplementationOnce(() => {
+			;(buildApiHandler as any).mockImplementationOnce(function () {
 				throw new Error("API handler error")
 			})
 			;(provider as any).providerSettingsManager = {
@@ -2026,7 +2057,9 @@ describe("Project MCP Settings", () => {
 			onDidChangeVisibility: vi.fn(),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test.skip("handles openProjectMcpSettings message", async () => {
@@ -2139,7 +2172,9 @@ describe.skip("ContextProxy integration", () => {
 
 		mockOutputChannel = { appendLine: vi.fn() } as unknown as vscode.OutputChannel
 		mockContextProxy = new ContextProxy(mockContext)
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy)
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", mockContextProxy, {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test("updateGlobalState uses contextProxy", async () => {
@@ -2227,14 +2262,18 @@ describe("ClineProvider - Router Models", () => {
 				asWebviewUri: vi.fn(),
 			},
 			visible: true,
-			onDidDispose: vi.fn().mockImplementation((callback) => {
+			onDidDispose: vi.fn().mockImplementation(function (callback) {
 				callback()
 				return { dispose: vi.fn() }
 			}),
-			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+			onDidChangeVisibility: vi.fn().mockImplementation(function () {
+				return { dispose: vi.fn() }
+			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 	})
 
 	test("handles requestRouterModels with successful responses", async () => {
@@ -2530,14 +2569,18 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				asWebviewUri: vi.fn(),
 			},
 			visible: true,
-			onDidDispose: vi.fn().mockImplementation((callback) => {
+			onDidDispose: vi.fn().mockImplementation(function (callback) {
 				callback()
 				return { dispose: vi.fn() }
 			}),
-			onDidChangeVisibility: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+			onDidChangeVisibility: vi.fn().mockImplementation(function () {
+				return { dispose: vi.fn() }
+			}),
 		} as unknown as vscode.WebviewView
 
-		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext))
+		provider = new ClineProvider(mockContext, mockOutputChannel, "sidebar", new ContextProxy(mockContext), {
+			enableTaskHistoryWatcher: false,
+		})
 
 		defaultTaskOptions = {
 			provider,
@@ -3074,7 +3117,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 				// Mock cleanup tracking
 				const cleanupSpy = vi.fn()
-				mockCline.overwriteClineMessages = vi.fn().mockImplementation(() => {
+				mockCline.overwriteClineMessages = vi.fn().mockImplementation(function () {
 					cleanupSpy()
 					throw new Error("Operation failed")
 				})
@@ -3121,7 +3164,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 				// Mock cleanup tracking
 				const cleanupSpy = vi.fn()
-				mockCline.overwriteClineMessages = vi.fn().mockImplementation(() => {
+				mockCline.overwriteClineMessages = vi.fn().mockImplementation(function () {
 					cleanupSpy()
 					throw new Error("Delete operation failed")
 				})
@@ -3421,7 +3464,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 	describe("getTaskWithId", () => {
 		it("returns empty apiConversationHistory when file is missing", async () => {
 			const historyItem = { id: "missing-api-file-task", task: "test task", ts: Date.now() }
-			vi.mocked(mockContext.globalState.get).mockImplementation((key: string) => {
+			vi.mocked(mockContext.globalState.get).mockImplementation(function (key: string) {
 				if (key === "taskHistory") {
 					return [historyItem]
 				}
@@ -3439,7 +3482,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 		it("returns empty apiConversationHistory when file contains invalid JSON", async () => {
 			const historyItem = { id: "corrupt-api-task", task: "test task", ts: Date.now() }
-			vi.mocked(mockContext.globalState.get).mockImplementation((key: string) => {
+			vi.mocked(mockContext.globalState.get).mockImplementation(function (key: string) {
 				if (key === "taskHistory") {
 					return [historyItem]
 				}

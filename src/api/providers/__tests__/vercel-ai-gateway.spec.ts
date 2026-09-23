@@ -61,13 +61,15 @@ vitest.mock("../../transform/caching/vercel-ai-gateway", () => ({
 const mockCreate = vitest.fn()
 const mockConstructor = vitest.fn()
 
-;(OpenAI as any).mockImplementation(() => ({
-	chat: {
-		completions: {
-			create: mockCreate,
+;(OpenAI as any).mockImplementation(function () {
+	return {
+		chat: {
+			completions: {
+				create: mockCreate,
+			},
 		},
-	},
-}))
+	}
+})
 ;(OpenAI as any).mockImplementation = mockConstructor.mockReturnValue({
 	chat: {
 		completions: {
